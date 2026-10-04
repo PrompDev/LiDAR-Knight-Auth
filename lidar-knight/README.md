@@ -85,7 +85,8 @@ node lidar-knight/dotmatrix/render.mjs --text "line one\nline two" --out two.svg
 
 - The code mock's countdown loses one dot per second, and the next dot to go out blinks at 2 Hz.
 - The tagline cursor blinks.
-- Both are CSS inside the SVG, and both stop when the viewer has asked for reduced motion.
+- The arrow on the DOWNLOAD badge and the DOWNLOAD button nudges one dot down every 1.6 s.
+- All of it is CSS inside the SVG, and all of it stops when the viewer has asked for reduced motion.
 
 ## Current images (`art/`)
 
@@ -97,7 +98,8 @@ node lidar-knight/dotmatrix/render.mjs --text "line one\nline two" --out two.svg
 | `code-mock.svg` | One selected code row: `004 104`, a live 30-dot countdown and the next code |
 | `divider.svg` | A dithered rule with a diamond at the centre |
 | `h-*.svg` | Section headers, pitch 6, with a scan line that fades to the right |
-| `badge-*.svg` | Dotted-outline badges: `FORK OF ENTE AUTH`, `AGPL-3.0`, `OFFLINE-FIRST`, `TOTP · RFC 6238` |
+| `badge-*.svg` | Dotted-outline badges: `FORK OF ENTE AUTH`, `AGPL-3.0`, `OFFLINE-FIRST`, `TOTP · RFC 6238`; and two links with a full-strength frame: `↓ DOWNLOAD` and `◆ EXPLORE THE CRAWL` |
+| `button-download.svg` | The big `↓ DOWNLOAD` button, pitch 6, full-strength frame and diamonds at both ends, with the subline `WINDOWS · ONE-CLICK INSTALLER` |
 
 ## Assets to generate
 

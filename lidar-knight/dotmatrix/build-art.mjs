@@ -59,7 +59,7 @@ const HEADERS = {
   'where-it-comes-from': 'WHERE IT COMES FROM',
   safety: 'SAFETY',
   'what-leaves-the-device': 'WHAT LEAVES THE DEVICE',
-  install: 'INSTALL',
+  download: 'DOWNLOAD',
   build: 'BUILD',
   'report-a-problem': 'REPORT A PROBLEM',
   credits: 'CREDITS',
@@ -166,7 +166,7 @@ for (const [slug, text] of Object.entries(BADGES)) {
   save(`badge-${slug}.svg`, c.toSVG({ label: text, pad: 1 }));
 }
 
-// The one badge that is a button (links to Install): full-strength frame, and a
+// The small download badge at the top (links to the Download section): full-strength frame, and a
 // down arrow in place of the diamond that nudges one dot down every 1.6 s.
 {
   const P = 3, c = new DotCanvas();
@@ -176,6 +176,39 @@ for (const [slug, text] of Object.entries(BADGES)) {
   c.css.push(`.ar{animation:n 1.6s step-end infinite}@keyframes n{50%{transform:translateY(${P}px)}}`,
     '@media (prefers-reduced-motion:reduce){.ar{animation:none}}');
   save('badge-download.svg', c.toSVG({ label: 'Download', pad: 1 }));
+}
+
+// ---- 8. the big DOWNLOAD button (links to the Windows installer) ------------------
+// Pitch 6, full-strength frame, outline diamonds at both ends like a selected
+// code row. The arrow nudges one dot down every 1.6 s; no motion under
+// prefers-reduced-motion. The subline is half the pitch and centred under it.
+{
+  const P = 6, S = 3, c = new DotCanvas();
+  const sub = 'WINDOWS · ONE-CLICK INSTALLER';
+  const mainW = 7 * P + measureCols('DOWNLOAD') * P, subW = measureCols(sub) * S;
+  const inner = Math.ceil(Math.max(mainW, subW) / P) * P;   // content width, on the big grid
+  const M = 4 * P, W = inner + 2 * M, H = 20 * P;          // frame size
+  const xMain = M + Math.round((inner - mainW) / 2 / P) * P;
+  const xSub = M + Math.round((inner - subW) / 2 / P) * P;
+  c.text('↓', xMain, M, { pitch: P, cls: 'ar' });
+  c.text('DOWNLOAD', xMain + 7 * P, M, { pitch: P });
+  c.text(sub, xSub, M + 10 * P, { pitch: S, dot: 2, opacity: 0.75 });
+  c.outline(0, 0, W, H, { pitch: P });
+  c.diamond(-4 * P, H / 2, 2, { pitch: P });
+  c.diamond(W + 4 * P, H / 2, 2, { pitch: P });
+  c.css.push(`.ar{animation:n 1.6s step-end infinite}@keyframes n{50%{transform:translateY(${P}px)}}`,
+    '@media (prefers-reduced-motion:reduce){.ar{animation:none}}');
+  save('button-download.svg', c.toSVG({ label: 'Download: Windows one-click installer', pad: 1 }));
+}
+
+// ---- 9. the EXPLORE badge (links to the red-dot crawl page) ----------------------
+// Badge size, but a full-strength frame because it is a link.
+{
+  const P = 3, c = new DotCanvas();
+  c.text('◆', 4 * P, 4 * P, { pitch: P, dot: 2 });
+  const t = c.text('EXPLORE THE CRAWL', 9 * P, 4 * P, { pitch: P, dot: 2 });
+  c.outline(0, 0, t.w + 13 * P, 15 * P, { pitch: P, dot: 2 });
+  save('badge-explore.svg', c.toSVG({ label: 'Explore the crawl', pad: 1 }));
 }
 
 console.log(`wrote ${written.length} files to ${OUT}\n  ${written.join('\n  ')}`);

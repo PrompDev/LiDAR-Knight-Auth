@@ -16,7 +16,8 @@
 <img src="lidar-knight/art/badge-agpl.svg" alt="AGPL-3.0">
 <img src="lidar-knight/art/badge-offline.svg" alt="Offline-first">
 <img src="lidar-knight/art/badge-totp.svg" alt="TOTP, RFC 6238">
-<a href="#install"><img src="lidar-knight/art/badge-download.svg" alt="Download: see Install"></a>
+<a href="#download"><img src="lidar-knight/art/badge-download.svg" alt="Download"></a>
+<a href="https://lidarknight.com/auth"><img src="lidar-knight/art/badge-explore.svg" alt="Explore the crawl"></a>
 
 </div>
 
@@ -84,9 +85,9 @@ Thank you, Ente, for building a serious authenticator in the open and licensing 
 
 **Verify what you run.**
 
-- Desktop builds come from the public workflow [`.github/workflows/lidar-knight-auth-desktop.yml`](.github/workflows/lidar-knight-auth-desktop.yml). Each run's page names the exact commit it built.
+- There is no CI. The Windows installer is built locally from this source by the maintainer, with the steps in [Build](#build), for download from `lidarknight.com`. The commit it was built from is listed under [Download](#download).
 - The builds are **not code-signed**, so Windows SmartScreen and macOS Gatekeeper will warn you. That warning is expected.
-- If a release lists SHA-256 hashes, check yours: `certutil -hashfile <file> SHA256` on Windows, `sha256sum <file>` on Linux, `shasum -a 256 <file>` on macOS.
+- Check the installer against the SHA-256 hash listed under [Download](#download): `certutil -hashfile <file> SHA256` on Windows, `sha256sum <file>` on Linux, `shasum -a 256 <file>` on macOS.
 - The strongest check: build it yourself from the same commit ([Build](#build)).
 
 **Audits.** Ente's code has been audited externally (Cure53, Symbolic Software, Fallible). Those audits cover **Ente's own releases**, not this fork or its changes.
@@ -108,24 +109,42 @@ Upstream Ente Auth makes a few connections even without an account. This fork re
 
 **Until that last row is ticked, do not use the in-app "Report a bug" or "Contact support" buttons.** They write to Ente, who do not support this fork. [Report a problem](#report-a-problem) says where to go instead.
 
-<h2><a name="install"></a><img src="lidar-knight/art/h-install.svg" alt="Install"></h2>
+<h2><a name="download"></a><img src="lidar-knight/art/h-download.svg" alt="Download"></h2>
+
+<div align="center">
+
+<a href="https://lidarknight.com/download/LiDAR-Knight-Auth-Setup.exe"><img src="lidar-knight/art/button-download.svg" alt="DOWNLOAD: Windows one-click installer" width="607"></a>
+
+**[DOWNLOAD LiDAR-Knight-Auth-Setup.exe](https://lidarknight.com/download/LiDAR-Knight-Auth-Setup.exe)**
+
+<a href="https://lidarknight.com/auth"><img src="lidar-knight/art/badge-explore.svg" alt="Explore the crawl"></a>
+
+</div>
 
 ```text
 > fetch build
-  windows, linux .... Actions > lidar-knight-auth-desktop > latest green run > Artifacts
+  windows ........... LiDAR-Knight-Auth-Setup.exe, one-click installer (above)
+  linux ............. no download. build from source.
   macos, mobile ..... no builds yet. build from source.
 ```
 
-1. Open this repository's **Actions** tab and pick the **lidar-knight-auth-desktop** workflow.
-2. Open the latest successful run and download the artifact for your system. GitHub only lets signed-in users download artifacts.
-3. **Windows:** unzip it and run the `.exe` inside. Keep the folder together, because the app needs the files next to it.
-4. **Linux:** unpack the bundle and run the binary in it. You need a running Secret Service keyring (GNOME Keyring or KWallet), because that is where the encryption key is kept.
-5. **Running next to Ente Auth:** fine on desktop (separate IDs and data folders); not possible on phones yet. [Safety](#safety) explains the details.
-6. In the app, press **+**, then scan the QR code or type the setup key. The defaults (SHA-1, 6 digits, 30 seconds) are what nearly every site uses.
+- **File:** `LiDAR-Knight-Auth-Setup.exe`, 20.8 MB, for 64-bit Windows. The download links point to Cloudflare at `lidarknight.com`. If one returns an error, the hosted copy is not online yet: build from source ([Build](#build)) instead.
+- **Source:** the app was built from commit `7f314a0` of this repository (app version 4.4.27). The installer script, [`LiDAR-Knight-Auth.iss`](mobile/apps/auth/windows/packaging/lidar-knight/LiDAR-Knight-Auth.iss), was added in the commit that added this Download section; the app code is unchanged from `7f314a0` there.
+- **SHA-256:** `da6fcb87a3f4d9949ce08265c35cf57501f53081235927e958f9af110900f113`. Check it before you run it: `certutil -hashfile LiDAR-Knight-Auth-Setup.exe SHA256` in a terminal, or `Get-FileHash LiDAR-Knight-Auth-Setup.exe` in PowerShell.
+- **Unsigned:** the installer is not code-signed, so Windows SmartScreen will warn you the first time. Click **More info**, then **Run anyway**. [Safety](#safety) explains why.
+- **What the installer does:** it installs for your Windows user only, with no administrator prompt, into `%LOCALAPPDATA%\Programs\LiDAR-Knight Auth`. It adds a Start-menu entry and a desktop shortcut, and starts the app when it finishes. It has its own installer ID, so it never replaces or removes an installed Ente Auth. To uninstall, open Windows **Settings > Apps**, find LiDAR-Knight Auth, and choose Uninstall.
+- **Linux, macOS, Android and iOS:** there is no download. Build from source ([Build](#build)). On Linux you need a running Secret Service keyring (GNOME Keyring or KWallet), because that is where the encryption key is kept.
+
+Then:
+
+1. **Running next to Ente Auth:** fine on desktop (separate IDs and data folders); not possible on phones yet. [Safety](#safety) explains the details.
+2. In the app, press **+**, then scan the QR code or type the setup key. The defaults (SHA-1, 6 digits, 30 seconds) are what nearly every site uses.
 
 <h2><a name="build"></a><img src="lidar-knight/art/h-build.svg" alt="Build"></h2>
 
-You need [Flutter 3.47.2](https://docs.flutter.dev/get-started/install), the version pinned in [`.github/actions/setup-flutter`](.github/actions/setup-flutter/action.yml).
+Every build of this fork is made this way, on the maintainer's own machine. Nothing is built by CI.
+
+You need [Flutter 3.47.2](https://docs.flutter.dev/get-started/install) exactly. That is the pinned version (upstream pins it in [`.github/actions/setup-flutter`](.github/actions/setup-flutter/action.yml)); check with `flutter --version`.
 
 ```sh
 git clone --filter=blob:none https://github.com/PrompDev/LiDAR-Knight-Auth.git
@@ -143,10 +162,11 @@ flutter run                       # iOS
 ```
 
 - Clone the **whole** repository, not a sparse part of it. `mobile/` is a Dart pub workspace, and `pub get` expects every member to be present.
-- **Windows:** you need Visual Studio with "Desktop development with C++". Run `git config --global core.longpaths true` first, because some paths are deep.
-- **Linux:** CI installs `libsecret-1-dev libsodium-dev libfuse2 ninja-build libgtk-3-dev dpkg-dev pkg-config rpm patchelf libsqlite3-dev locate libayatana-appindicator3-dev libffi-dev libtiff5 xz-utils libarchive-tools libcurl4-openssl-dev`. Some of these are only for packaging.
+- **Windows:** you need Visual Studio 2022 with the "Desktop development with C++" workload (`local_auth_windows` needs 2022). Run `git config --global core.longpaths true` first, because some paths are deep. Then `flutter build windows --release`. The app is the whole `build/windows/x64/runner/Release` folder; keep it together, because `auth.exe` needs the files next to it.
+- **Linux:** to build, install `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libsodium-dev libsqlite3-dev libayatana-appindicator3-dev libffi-dev libcurl4-openssl-dev` (on Debian or Ubuntu: `sudo apt-get install -y` followed by that list). Upstream's packaging also uses `libfuse2 dpkg-dev rpm patchelf locate libtiff5 xz-utils libarchive-tools`. Then `flutter build linux --release` and run the binary in `build/linux/x64/release/bundle`.
+- **Windows installer:** the download is made from that `Release` folder with the fork's own Inno Setup 6 script, [`mobile/apps/auth/windows/packaging/lidar-knight/LiDAR-Knight-Auth.iss`](mobile/apps/auth/windows/packaging/lidar-knight/LiDAR-Knight-Auth.iss). It has its own AppId (`9D2BB997-46D5-494B-B352-3AA386B9994D`), never Ente's, and installs per user. Compile it with `ISCC.exe LiDAR-Knight-Auth.iss`; the script's header lists the options. The output is `mobile/apps/auth/build/installer/LiDAR-Knight-Auth-Setup.exe`.
 - **Android release:** [set up your own keystore](https://docs.flutter.dev/deployment/android#create-an-upload-keystore), then run `flutter build apk --release --flavor independent`.
-- **Packaging: `linux/packaging/*` and `windows/packaging/exe` still carry Ente's identity and AppId; do not use them.** Their `make_config.yaml` files still name Ente as maintainer, vendor or publisher, with Ente's URLs, the package name `enteauth` clashes with Ente's packages, and the Windows installer's AppId is Ente's, so an installer built from it would replace a real Ente Auth install. The same goes for `scripts/build_windows_installer.ps1`. The desktop workflow uses none of them.
+- **Packaging: `linux/packaging/*` and `windows/packaging/exe` still carry Ente's identity and AppId; do not use them.** Their `make_config.yaml` files still name Ente as maintainer, vendor or publisher, with Ente's URLs, the package name `enteauth` clashes with Ente's packages, and the AppId in `windows/packaging/exe` is Ente's, so an installer built from it would replace a real Ente Auth install. The same goes for `scripts/build_windows_installer.ps1`. The local builds and the Windows installer above use none of them.
 
 <h2><a name="report-a-problem"></a><img src="lidar-knight/art/h-report-a-problem.svg" alt="Report a problem"></h2>
 
@@ -190,6 +210,9 @@ This is the notice of modifications that the AGPL asks for (section 5a). For the
 | 2026-10-04 | The lock-screen cover that hides codes is always fully opaque. |
 | 2026-10-04 | The onboarding line about security audits now reads "Open source fork of Ente Auth (AGPL-3.0)" in every language. |
 | 2026-10-04 | Linux AppStream metadata describes this fork instead of Ente's product. |
+| 2026-10-04 | Builds are local: no CI. The fork's desktop build workflow was removed before it was ever used; the README gives the local build steps. |
+| 2026-10-04 | Windows one-click installer: the fork's own Inno Setup script `windows/packaging/lidar-knight/LiDAR-Knight-Auth.iss` (own AppId, per-user, no administrator prompt). Built locally from commit `7f314a0` (app version 4.4.27), for download from Cloudflare at `lidarknight.com`. |
+| 2026-10-04 | This README's Install section is now [Download](#download), with a DOWNLOAD button, the file's size and SHA-256 hash, and an Explore badge. New art: `h-download.svg` (replaces `h-install.svg`), `button-download.svg`, `badge-explore.svg`. |
 
 The full list of modified files is in [`mobile/apps/auth/CHANGES-LIDAR-KNIGHT.md`](mobile/apps/auth/CHANGES-LIDAR-KNIGHT.md). The remaining connection changes are tracked in [What leaves the device](#what-leaves-the-device).
 
@@ -200,7 +223,7 @@ What this fork works on:
 - `mobile/apps/auth`, the app
 - the shared packages it uses in `mobile/packages`
 - `lidar-knight/`, the art
-- the desktop build workflow
+- the local build steps in [Build](#build) and the Windows installer script
 
 Everything else is **upstream Ente code**, kept unchanged so the source stays complete and the licence chain stays clear: Photos, Locker, the server, the web apps, the CLI, docs and their workflows. None of it is maintained here. Its READMEs, `CONTRIBUTING.md`, `SUPPORT.md` and `SECURITY.md` speak for Ente, not for this project. For any of it, go to [github.com/ente/ente](https://github.com/ente/ente).
 
