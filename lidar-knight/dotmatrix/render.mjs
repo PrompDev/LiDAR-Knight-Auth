@@ -151,6 +151,7 @@ export const GLYPHS = {
   '·': '. . . # . . .',
   '◆': '... ... .#. ### .#. ... ...',       // filled 3x3 diamond: bullets, separators
   '◇': '..... ..#.. .#.#. #...# .#.#. ..#.. .....', // outline diamond: markers
+  '↓': '..#.. ..#.. ..#.. #.#.# .###. ..#.. .....', // down arrow: the DOWNLOAD badge
 };
 
 const SPACE_COLS = 3; // a word space advances 3 columns (plus the 1-column gap)

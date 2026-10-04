@@ -166,5 +166,17 @@ for (const [slug, text] of Object.entries(BADGES)) {
   save(`badge-${slug}.svg`, c.toSVG({ label: text, pad: 1 }));
 }
 
+// The one badge that is a button (links to Install): full-strength frame, and a
+// down arrow in place of the diamond that nudges one dot down every 1.6 s.
+{
+  const P = 3, c = new DotCanvas();
+  c.text('↓', 4 * P, 4 * P, { pitch: P, dot: 2, cls: 'ar' });
+  const t = c.text('DOWNLOAD', 11 * P, 4 * P, { pitch: P, dot: 2 });
+  c.outline(0, 0, t.w + 15 * P, 15 * P, { pitch: P, dot: 2 });
+  c.css.push(`.ar{animation:n 1.6s step-end infinite}@keyframes n{50%{transform:translateY(${P}px)}}`,
+    '@media (prefers-reduced-motion:reduce){.ar{animation:none}}');
+  save('badge-download.svg', c.toSVG({ label: 'Download', pad: 1 }));
+}
+
 console.log(`wrote ${written.length} files to ${OUT}\n  ${written.join('\n  ')}`);
 console.log(`palette: red ${PALETTE.red} (all information), cream ${PALETTE.cream} (app highlights only)`);

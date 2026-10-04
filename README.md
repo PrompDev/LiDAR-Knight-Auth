@@ -16,6 +16,7 @@
 <img src="lidar-knight/art/badge-agpl.svg" alt="AGPL-3.0">
 <img src="lidar-knight/art/badge-offline.svg" alt="Offline-first">
 <img src="lidar-knight/art/badge-totp.svg" alt="TOTP, RFC 6238">
+<a href="#install"><img src="lidar-knight/art/badge-download.svg" alt="Download: see Install"></a>
 
 </div>
 
