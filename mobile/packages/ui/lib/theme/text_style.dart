@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 const FontWeight _regularWeight = FontWeight.w500;
 const FontWeight _boldWeight = FontWeight.w600;
-const String _fontFamily = 'Inter';
+// LiDAR-Knight Auth: resolves to the app's bundled Doto dot-matrix font.
+const String _fontFamily = 'Doto';
 
 final TextStyle h1 = TextStyle(
   fontSize: PlatformTextConfig.adjustFontSize(48),

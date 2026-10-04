@@ -175,7 +175,12 @@ class _AppLockState extends State<AppLock> with WidgetsBindingObserver {
             child: AbsorbPointer(
               child: Builder(
                 builder: (context) => ColoredBox(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  // Always opaque, even when the theme's scaffold is
+                  // see-through (LiDAR-Knight Auth): codes must never show
+                  // through while the app is locked.
+                  color: Theme.of(
+                    context,
+                  ).scaffoldBackgroundColor.withValues(alpha: 1),
                 ),
               ),
             ),

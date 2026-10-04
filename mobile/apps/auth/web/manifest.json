@@ -1,11 +1,11 @@
 {
-    "name": "Auth",
-    "short_name": "Auth",
+    "name": "LiDAR-Knight Auth",
+    "short_name": "LK Auth",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "ente two-factor authenticator",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "description": "LiDAR-Knight Auth: a red-dot two-factor authenticator, a fork of Ente Auth",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

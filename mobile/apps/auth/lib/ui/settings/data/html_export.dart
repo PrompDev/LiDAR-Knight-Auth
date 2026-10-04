@@ -265,7 +265,7 @@ Future<String> generateHtml(BuildContext context) async {
 </style>
   </head>
   <body>
-    <h1 style="text-align: center;">Ente Auth</h1>
+    <h1 style="text-align: center;">LiDAR-Knight Auth</h1>
     <h4 style="text-align: center; margin-bottom: 5px;">OTP Data Export</h4>
     <p style="text-align: center; margin-top: 0px;">$formattedDate</p>
     <div class="gutter" style="padding: 4px">&nbsp;</div>
@@ -280,23 +280,10 @@ Future<String> generateHtml(BuildContext context) async {
   
   <div class="footer" style="text-align: center; font-size: 12px; color:
     rgb(136, 136, 136)">
-    <div>
-      <a href="https://ente.com" target="_blank"><img src="https://email-assets.ente.com/ente-2026-green.png" style="width: 100px;
-        padding: 24px" title="Ente" alt="Ente" /></a>
-    </div>
-    <div>
-      <a href="https://fosstodon.org/@ente" target="_blank"><img src="https://email-assets.ente.com/mastodon-icon.png"
-          class="footer-icons" style="width: 24px; padding: 4px" title="Mastodon" alt="Mastodon" /></a>
-      <a href="https://twitter.com/enteio" target="_blank"><img src="https://email-assets.ente.com/twitter-icon.png"
-          class="footer-icons" style="width: 24px; padding: 4px" title="Twitter" alt="Twitter" /></a>
-      <a href="https://ente.com/discord" target="_blank"><img src="https://email-assets.ente.com/discord-icon.png"
-          class="footer-icons" style="width: 24px; padding: 4px" title="Discord" alt="Discord" /></a>
-      <a href="https://github.com/ente" target="_blank"><img src="https://email-assets.ente.com/github-icon.png"
-          class="footer-icons" style="width: 24px; padding: 4px" title="GitHub" alt="GitHub" /></a>
-    </div>
     <p>
-      Ente Technologies, Inc.
-      <br /> 1111B S Governors Ave 6032 Dover, DE 19904
+      Exported by LiDAR-Knight Auth, a modified fork of Ente Auth by
+      Ente Technologies, Inc. (https://github.com/ente/ente), licensed AGPL-3.0.
+      <br /> This file holds your codes in plain text. Keep it private.
     </p>
     <br />
   </div>

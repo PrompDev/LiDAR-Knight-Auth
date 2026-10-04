@@ -1,10 +1,10 @@
+import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
 import 'package:ente_auth/ui/settings/data/import_page.dart';
 import 'package:ente_auth/utils/platform_util.dart';
 import 'package:ente_components/ente_components.dart';
 import 'package:ente_pure_utils/ente_pure_utils.dart';
 import 'package:ente_strings/ente_strings.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class HomeEmptyStateWidget extends StatelessWidget {
   final VoidCallback? onScanTap;
@@ -22,10 +22,6 @@ class HomeEmptyStateWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.strings;
     final colors = context.componentColors;
-    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
-    final bgSvgPath = isDarkTheme
-        ? 'assets/svg/empty-state-bg-dark.svg'
-        : 'assets/svg/empty-state-bg-light.svg';
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final extraBottomPadding = PlatformDetector.isMobile()
         ? (bottomPadding > 0 ? bottomPadding : 24.0)
@@ -52,26 +48,11 @@ class HomeEmptyStateWidget extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
+                        // LiDAR-Knight Auth: a pulsing dot diamond around a
+                        // keyhole instead of the upstream illustration.
+                        const SizedBox(
                           height: 188,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                bottom: 6,
-                                child: SvgPicture.asset(
-                                  bgSvgPath,
-                                  width: 224,
-                                  height: 142,
-                                ),
-                              ),
-                              Image.asset(
-                                'assets/onboarding-2.png',
-                                height: 188,
-                              ),
-                            ],
-                          ),
+                          child: Center(child: LkDiamondEmblem(size: 165)),
                         ),
                         const SizedBox(height: Spacing.xxl),
                         SizedBox(

@@ -122,7 +122,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "ente",
+      title: "LiDAR-Knight Auth",
       themeMode: _themeMode,
       theme: lightThemeData,
       darkTheme: darkThemeData,

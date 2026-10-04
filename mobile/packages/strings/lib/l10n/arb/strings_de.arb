@@ -1635,7 +1635,6 @@
     }
   },
   "featureBackupCodes": "Ende-zu-Ende-Verschlüsselung\nBackup und Synchronisierung",
-  "featureOpenSource": "Open Source und\nvon Sicherheitsexperten geprüft",
   "featurePassAutomatically": "Gib sie in Notfällen automatisch weiter",
   "featureSaveImportant": "Speichere deine wichtigen Dokumente und Zugangsdaten",
   "featureSearchEtc": "Suche, Tags, Teilen,\nnächster Code und viel mehr",
@@ -2697,7 +2696,7 @@
   "offlineHomeSignupBannerAction": "Jetzt sichern",
   "offlineHomeSignupBannerDescription": "Verschlüsselte Sicherungen an drei Orten, um deine Erinnerungen sicher zu halten.",
   "offlineHomeSignupBannerTitle": "Schütze deine Erinnerungen für immer",
-  "offlineKeyUnavailableMessage": "Ente Auth hat keinen Zugriff auf den Schlüssel für deine Offline-Codes.",
+  "offlineKeyUnavailableMessage": "LiDAR-Knight Auth hat keinen Zugriff auf den Schlüssel für deine Offline-Codes.",
   "offlineModeWarning": "Sie haben sich dafür entschieden, ohne Sicherungen fortzufahren. Bitte führen Sie manuelle Sicherungen durch, um sicherzustellen, dass Ihre Codes sicher sind.",
   "offlineNameFaceBannerSubtitle": "Melde dich an, sie zu markieren und ihre Fotos später leicht zu finden.",
   "offlineNameFaceBannerTitle": "Gib diesem Gesicht einen Namen",

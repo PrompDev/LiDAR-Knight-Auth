@@ -11,12 +11,13 @@ import 'package:ente_auth/app/view/app.dart';
 import 'package:ente_auth/core/configuration.dart';
 import 'package:ente_auth/events/trigger_logout_event.dart';
 import 'package:ente_auth/locale.dart';
-import 'package:ente_auth/theme/colors.dart';
 import 'package:ente_auth/theme/ente_theme.dart';
+import 'package:ente_auth/theme/lidar_knight_theme.dart';
 import 'package:ente_auth/ui/account/logout_dialog.dart';
 import 'package:ente_auth/ui/components/dialog_widget.dart';
 import 'package:ente_auth/ui/home/widgets/rounded_action_buttons.dart';
 import 'package:ente_auth/ui/home_page.dart';
+import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
 import 'package:ente_auth/ui/settings/developer_settings_widget.dart';
 import 'package:ente_auth/ui/settings/language_picker.dart';
 import 'package:ente_auth/utils/debug_build_flags.dart';
@@ -33,7 +34,6 @@ import 'package:ente_ui/components/buttons/models/button_result.dart';
 import 'package:ente_ui/components/buttons/models/button_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:local_auth/local_auth.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -97,14 +97,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     debugPrint("Building OnboardingPage");
     final l10n = context.strings;
-    final textTheme = getEnteTextTheme(context);
 
     return Scaffold(
-      backgroundColor: accentColor,
+      // LiDAR-Knight Auth: see-through, so the red dot haze shows behind.
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         leading: const SizedBox(),
-        title: SvgPicture.asset("assets/svg/app-logo.svg"),
-        backgroundColor: accentColor,
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: LkDotText('LiDAR-Knight Auth', pitch: 3),
+        ),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -133,7 +136,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     padding: EdgeInsets.only(bottom: 12),
                     child: Text(
                       "Lang(i)",
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: LkColors.red),
                     ),
                   ),
                 ),
@@ -169,36 +172,37 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       constraints: const BoxConstraints(maxWidth: 580),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 28),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: RoundedButton(
-                                label: l10n.signUp,
-                                onPressed: _navigateToSignUpPage,
-                                type: RoundedButtonType.secondaryInverse,
-                              ),
+                            // LiDAR-Knight Auth is offline-first: codes stay
+                            // on this device unless you choose an account.
+                            RoundedButton(
+                              label: l10n.useOffline,
+                              onPressed: _optForOfflineMode,
+                              type: RoundedButtonType.primary,
                             ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: RoundedButton(
-                                label: l10n.logInLabel,
-                                onPressed: _navigateToSignInPage,
-                                type: RoundedButtonType.primaryInverse,
-                              ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: RoundedButton(
+                                    label: l10n.signUp,
+                                    onPressed: _navigateToSignUpPage,
+                                    type: RoundedButtonType.secondaryInverse,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: RoundedButton(
+                                    label: l10n.logInLabel,
+                                    onPressed: _navigateToSignInPage,
+                                    type: RoundedButtonType.secondaryInverse,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: _optForOfflineMode,
-                      child: Text(
-                        l10n.useOffline,
-                        style: textTheme.bodyBold.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          decoration: TextDecoration.underline,
-                          decorationColor: Colors.white,
                         ),
                       ),
                     ),
@@ -435,16 +439,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return DotsIndicator(
       dotsCount: _featureCount,
       position: _activeDotIndex.toDouble(),
-      decorator: DotsDecorator(
-        activeColor: Colors.white,
-        color: Colors.white.withValues(alpha: 0.32),
-        activeShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        size: const Size(10, 10),
-        activeSize: const Size(20, 10),
-        spacing: const EdgeInsets.all(6),
+      decorator: const DotsDecorator(
+        // Square dots, like everything else in the dot theme.
+        activeColor: LkColors.red,
+        color: LkColors.redDim,
+        activeShape: RoundedRectangleBorder(),
+        shape: RoundedRectangleBorder(),
+        size: Size(8, 8),
+        activeSize: Size(20, 8),
+        spacing: EdgeInsets.all(6),
       ),
       animate: true,
       animationDuration: const Duration(milliseconds: 300),
@@ -521,7 +524,9 @@ class _FeatureItemWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Image.asset(assetPath, height: 188),
+        // LiDAR-Knight Auth: a dot diamond emblem instead of the upstream
+        // illustrations.
+        const Center(child: LkDiamondEmblem(size: 188)),
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -529,7 +534,7 @@ class _FeatureItemWidget extends StatelessWidget {
             title,
             style: getEnteTextTheme(
               context,
-            ).largeBold.copyWith(color: Colors.white),
+            ).largeBold.copyWith(color: LkColors.red),
             textAlign: TextAlign.center,
           ),
         ),

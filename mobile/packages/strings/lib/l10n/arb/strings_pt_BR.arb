@@ -1508,7 +1508,6 @@
     }
   },
   "featureBackupCodes": "Criptografado de ponta a ponta\nBackup e sincronização",
-  "featureOpenSource": "Código aberto e\nauditado por especialistas de segurança",
   "featurePassAutomatically": "Passe-os automaticamente em emergências",
   "featureSaveImportant": "Salve seus documentos importantes e credenciais",
   "featureSearchEtc": "Busque, etiquetas, compartilhe,\nPróximo código e muito mais",

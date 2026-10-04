@@ -1208,7 +1208,6 @@
     }
   },
   "featureBackupCodes": "Koncově šifrovaná\nzáloha a synchronizace",
-  "featureOpenSource": "Open source a\nprověřené bezpečnostními odborníky",
   "featurePassAutomatically": "Automaticky je předejte v případě nouze",
   "featureSaveImportant": "Uložte své důležité dokumenty a přihlašovací údaje",
   "featureSearchEtc": "Vyhledávání, štítky, sdílení,\ndalší kód a mnoho dalších",

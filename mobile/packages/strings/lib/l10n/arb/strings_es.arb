@@ -1208,7 +1208,6 @@
     }
   },
   "featureBackupCodes": "Copia de seguridad y sincronización cifradas de extremo a extremo",
-  "featureOpenSource": "De código abierto y auditado por expertos en seguridad",
   "featurePassAutomatically": "Pasalos automaticamente en emergencias",
   "featureSaveImportant": "Guarda tus documentos y credenciales importantes",
   "featureSearchEtc": "Busca, Etiqueta, Comparte, Siguiente código y mucho más",

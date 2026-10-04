@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:ente_auth/theme/ente_theme.dart';
+import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
 import 'package:flutter/material.dart';
 
 class CodeTimerProgress extends StatefulWidget {
@@ -68,48 +68,21 @@ class _CodeTimerProgressState extends State<CodeTimerProgress> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: widget.isCompactMode ? 1 : 3,
+      height: widget.isCompactMode ? 2 : 3,
       width: double.infinity,
       child: ValueListenableBuilder<double>(
         valueListenable: _progress,
         builder: (context, progress, _) {
+          // LiDAR-Knight Auth: a row of square dots counts down; in the
+          // last five seconds the lit dots turn cream.
           return CustomPaint(
-            key: Key(progress.toString()),
-            painter: _ProgressPainter(
+            painter: LkDotCountdownPainter(
               progress: progress,
-              color: progress > 0.4
-                  ? getEnteColorScheme(context).primary700
-                  : Colors.orange,
+              highlight: progress * widget.period <= 5,
             ),
           );
         },
       ),
     );
-  }
-}
-
-class _ProgressPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-
-  const _ProgressPainter({required this.progress, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final rect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width * progress, size.height),
-      const Radius.circular(2),
-    );
-
-    canvas.drawRRect(rect, paint);
-  }
-
-  @override
-  bool shouldRepaint(_ProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }

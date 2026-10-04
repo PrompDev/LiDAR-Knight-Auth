@@ -867,7 +867,6 @@
     }
   },
   "featureBackupCodes": "Uçtan uca şifreli\nyedekleme ve senkronizasyon",
-  "featureOpenSource": "Açık kaynaklı ve\ngüvenlik uzmanları tarafından denetlenmiş",
   "featurePassAutomatically": "Acil durumlarda otomatik olarak aktarın",
   "featureSaveImportant": "Önemli belgelerinizi ve kimlik bilgilerinizi kaydedin",
   "featureSearchEtc": "Arama, Etiketler, Paylaş,\nSonraki kod ve çok daha fazlası",

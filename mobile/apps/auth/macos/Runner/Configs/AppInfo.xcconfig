@@ -5,12 +5,12 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = Ente Auth
+PRODUCT_NAME = LiDAR-Knight Auth
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = io.ente.auth
+PRODUCT_BUNDLE_IDENTIFIER = io.github.prompdev.lidarknightauth
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 Ente Technologies, Inc. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 Ente Technologies, Inc. Modifications © 2026 LiDAR-Knight Auth contributors. AGPL-3.0.
 
 DEVELOPMENT_TEAM = 6Z68YJY9Q2

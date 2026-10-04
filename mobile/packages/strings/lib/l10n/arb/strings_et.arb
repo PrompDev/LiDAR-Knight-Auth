@@ -404,7 +404,6 @@
   },
   "faqs": "KKK",
   "featureBackupCodes": "Läbivalt krüptitud varundus ja sünkroonimine",
-  "featureOpenSource": "Avatud lähtekoodiga ja\nauditeeritud turvaekspertide poolt",
   "featureSearchEtc": "Otsing, sildid, jagamine,\njärgmine kood ja paljugi veel",
   "fieldCopiedToClipboard": "{fieldName} on kopeeritud lõikelauale",
   "@fieldCopiedToClipboard": {

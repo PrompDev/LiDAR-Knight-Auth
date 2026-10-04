@@ -20,6 +20,7 @@ import 'package:ente_auth/store/authenticator_db.dart';
 import 'package:ente_auth/store/code_display_store.dart';
 import 'package:ente_auth/store/code_store.dart';
 import 'package:ente_auth/ui/home_page.dart';
+import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
 import 'package:ente_auth/ui/utils/icon_utils.dart';
 import 'package:ente_auth/utils/debug_build_flags.dart';
 import 'package:ente_auth/utils/directory_utils.dart' as auth_dir_utils;
@@ -38,12 +39,24 @@ import 'package:ente_strings/ente_strings.dart';
 import 'package:ente_ui/theme/theme_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 final _logger = Logger("main");
+
+/// The name shown on window titles and the tray (LiDAR-Knight Auth fork).
+const String kAppDisplayName = "LiDAR-Knight Auth";
+
+void _registerFontLicenses() {
+  // Doto (SIL OFL 1.1) is bundled with the app; list it on the licences page.
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('assets/fonts/doto/OFL.txt');
+    yield LicenseEntryWithLineBreaks(const ['Doto'], license);
+  });
+}
 
 Future<void> initSystemTray() async {
   if (PlatformDetector.isMobile()) return;
@@ -54,7 +67,7 @@ Future<void> initSystemTray() async {
       : _linuxTrayIconPath();
   await trayManager.setIcon(path, isTemplate: true);
   if (Platform.isWindows) {
-    await trayManager.setToolTip("Ente Auth");
+    await trayManager.setToolTip(kAppDisplayName);
   }
   Menu menu = Menu(
     items: [
@@ -78,6 +91,7 @@ String _linuxTrayIconPath() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   registerCryptoApi(const EnteCryptoDartAdapter());
+  _registerFontLicenses();
 
   if (PlatformDetector.isDesktop()) {
     await windowManager.ensureInitialized();
@@ -111,6 +125,11 @@ void main() async {
       WindowOptions windowOptions = WindowOptions(
         size: WindowListenerService.instance.getWindowSize(),
         maximumSize: const Size(8192, 8192),
+        title: kAppDisplayName,
+        // See-through window: the app paints its own translucent veil and
+        // red dot haze (LkBackdrop). Where the platform cannot show a
+        // transparent window this falls back to the opaque black veil.
+        backgroundColor: Colors.transparent,
       );
       bool isMaximized = WindowListenerService.instance.getIsMaximized();
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -147,21 +166,24 @@ Future<void> _runInForeground() async {
     final Locale? locale = await getLocale(noFallback: true);
     unawaited(UpdateService.instance.showUpdateNotification());
     runApp(
-      AppLock(
-        builder: (args) => App(locale: locale, savedThemeMode: savedThemeMode),
-        debugShowCheckedModeBanner: false,
-        lockScreen: LockScreen(configuration),
-        enabled: await LockScreenSettings.instance.shouldShowLockScreen(),
-        locale: locale,
-        lightTheme: lightThemeData,
-        darkTheme: darkThemeData,
-        savedThemeMode: savedThemeMode,
-        localeListResolutionCallback: localResolutionCallBack,
-        localizationsDelegates: const [
-          ...StringsLocalizations.localizationsDelegates,
-        ],
-        supportedLocales: appSupportedLocales,
-        backgroundLockLatency: const Duration(seconds: 0),
+      LkBackdrop(
+        child: AppLock(
+          builder: (args) =>
+              App(locale: locale, savedThemeMode: savedThemeMode),
+          debugShowCheckedModeBanner: false,
+          lockScreen: LockScreen(configuration),
+          enabled: await LockScreenSettings.instance.shouldShowLockScreen(),
+          locale: locale,
+          lightTheme: lightThemeData,
+          darkTheme: darkThemeData,
+          savedThemeMode: savedThemeMode,
+          localeListResolutionCallback: localResolutionCallBack,
+          localizationsDelegates: const [
+            ...StringsLocalizations.localizationsDelegates,
+          ],
+          supportedLocales: appSupportedLocales,
+          backgroundLockLatency: const Duration(seconds: 0),
+        ),
       ),
     );
   });

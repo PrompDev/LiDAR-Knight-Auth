@@ -5,7 +5,7 @@ project(runner LANGUAGES CXX)
 set(ENV{SENTRY_NATIVE_BACKEND} "none")
 
 set(BINARY_NAME "enteauth")
-set(APPLICATION_ID "io.ente.auth")
+set(APPLICATION_ID "io.github.prompdev.lidarknightauth")
 
 cmake_policy(SET CMP0063 NEW)
 

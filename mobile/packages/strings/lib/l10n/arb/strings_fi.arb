@@ -128,7 +128,6 @@
     "description": "FAQ link label"
   },
   "featureBackupCodes": "Päästä päähän salattu varmuuskopiointi ja synkronointi",
-  "featureOpenSource": "Avoin lähdekoodi ja tietoturva-asiantuntijoiden tarkastama",
   "forgotPassword": "Olen unohtanut salasanani",
   "@forgotPassword": {
     "description": "Forgot password link label"

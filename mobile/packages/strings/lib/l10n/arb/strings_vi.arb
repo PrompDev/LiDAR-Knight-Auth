@@ -1594,7 +1594,6 @@
     }
   },
   "featureBackupCodes": "Sao lưu và đồng bộ\nmã hóa đầu cuối",
-  "featureOpenSource": "Mã nguồn mở và\nđược chẩn đoán bởi các chuyên gia bảo mật",
   "featurePassAutomatically": "Tu dong chuyen giao chung trong truong hop khan cap",
   "featureSaveImportant": "Luu tai lieu va thong tin dang nhap quan trong cua ban",
   "featureSearchEtc": "Tìm, Gắn thẻ, Chia sẻ,\nMã tiếp theo và nhiều hơn nữa",
@@ -2613,7 +2612,7 @@
   "offlineHomeSignupBannerAction": "Sao lưu ngay",
   "offlineHomeSignupBannerDescription": "Sao lưu mã hóa ở 3 nơi để giữ kỷ niệm của bạn luôn an toàn.",
   "offlineHomeSignupBannerTitle": "Bảo vệ vĩnh viễn kỷ niệm của bạn",
-  "offlineKeyUnavailableMessage": "Ente Auth không thể truy cập khóa cho mã ngoại tuyến của bạn.",
+  "offlineKeyUnavailableMessage": "LiDAR-Knight Auth không thể truy cập khóa cho mã ngoại tuyến của bạn.",
   "offlineModeWarning": "Bạn đã chọn tiếp tục mà không sao lưu. Vui lòng sao lưu thủ công để đảm bảo mã của bạn được an toàn.",
   "offlineNameFaceBannerSubtitle": "Đăng ký để gắn thẻ họ và dễ dàng tìm ảnh của họ sau.",
   "offlineNameFaceBannerTitle": "Đặt tên cho khuôn mặt này",

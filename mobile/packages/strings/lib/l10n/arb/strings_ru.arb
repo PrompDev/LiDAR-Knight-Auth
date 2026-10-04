@@ -1654,7 +1654,6 @@
     }
   },
   "featureBackupCodes": "Сквозное шифрование резервного копирования и синхронизация",
-  "featureOpenSource": "Открытый исходный код\nпроверенный экспертами по безопасности",
   "featurePassAutomatically": "Автоматически передавайте их в экстренных случаях",
   "featureSaveImportant": "Сохраняйте важные документы и учётные данные",
   "featureSearchEtc": "Поиск, теги, поделиться,\nследующий одноразовый код и многое другое",
@@ -2657,7 +2656,7 @@
   "offlineHomeSignupBannerAction": "Создать резервную копию",
   "offlineHomeSignupBannerDescription": "Зашифрованные резервные копии в 3 местах, чтобы сохранить ваши воспоминания.",
   "offlineHomeSignupBannerTitle": "Защитите воспоминания навсегда",
-  "offlineKeyUnavailableMessage": "Ente Auth не имеет доступа к ключу для ваших офлайн-кодов.",
+  "offlineKeyUnavailableMessage": "LiDAR-Knight Auth не имеет доступа к ключу для ваших офлайн-кодов.",
   "offlineModeWarning": "Вы решили продолжить без резервных копий. Пожалуйста, создайте резервные копии вручную, чтобы убедиться, что ваши коды в безопасности.",
   "offlineNameFaceBannerSubtitle": "Зарегистрируйтесь, чтобы пометить их и легко находить их фотографии позже.",
   "offlineNameFaceBannerTitle": "Назовите это лицо",

@@ -114,7 +114,6 @@
     "description": "FAQ link label"
   },
   "featureBackupCodes": "पूर्ण रूप से कूटबद्ध\nबैकअप और समन्वयन",
-  "featureOpenSource": "ओपन सोर्स और\nसुरक्षा विशेषज्ञों द्वारा ऑडिट किया गया",
   "featureSearchEtc": "खोज, टैग, साझा करें,\nअगला कोड और बहुत कुछ",
   "forgotPassword": "पासवर्ड भूल गए",
   "@forgotPassword": {

@@ -1,9 +1,11 @@
 import 'package:ente_auth/theme/colors.dart';
 import 'package:flutter/material.dart';
 
-const FontWeight _regularWeight = FontWeight.w500;
-const FontWeight _boldWeight = FontWeight.w600;
-const String _fontFamily = 'Inter';
+// LiDAR-Knight Auth: every letter is drawn in Doto, a square-dot matrix
+// face (SIL OFL). Heavy weights keep thin dots from turning into specks.
+const FontWeight _regularWeight = FontWeight.w800;
+const FontWeight _boldWeight = FontWeight.w900;
+const String _fontFamily = 'Doto';
 
 const TextStyle h1 = TextStyle(
   fontSize: 48,
@@ -42,14 +44,14 @@ const TextStyle small = TextStyle(
   fontFamily: _fontFamily,
 );
 const TextStyle mini = TextStyle(
-  fontSize: 12,
-  height: 15 / 12.0,
+  fontSize: 13,
+  height: 16 / 13.0,
   fontWeight: _regularWeight,
   fontFamily: _fontFamily,
 );
 const TextStyle tiny = TextStyle(
-  fontSize: 10,
-  height: 12 / 10.0,
+  fontSize: 12,
+  height: 15 / 12.0,
   fontWeight: _regularWeight,
   fontFamily: _fontFamily,
 );

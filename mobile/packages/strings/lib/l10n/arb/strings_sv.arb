@@ -1650,7 +1650,6 @@
     }
   },
   "featureBackupCodes": "Totalsträckskryptering säkerhetskopiering och synkronisering",
-  "featureOpenSource": "Öppen källkod och\ngranskade av säkerhetsexperter",
   "featurePassAutomatically": "Skicka dem vidare automatiskt vid noedfall",
   "featureSaveImportant": "Spara dina viktiga dokument och inloggningsuppgifter",
   "featureSearchEtc": "Sök, etiketter, dela,\nNästa kod och mycket mer",
@@ -2862,7 +2861,7 @@
   "offlineHomeSignupBannerAction": "Säkerhetskopiera nu",
   "offlineHomeSignupBannerDescription": "Krypterade säkerhetskopiar på 3 platser för att hålla dina minnen säkra.",
   "offlineHomeSignupBannerTitle": "Skydda dina minnen för evigt",
-  "offlineKeyUnavailableMessage": "Ente Auth kan inte komma åt nyckeln till dina offlinekoder.",
+  "offlineKeyUnavailableMessage": "LiDAR-Knight Auth kan inte komma åt nyckeln till dina offlinekoder.",
   "offlineModeWarning": "Du har valt att fortsätta utan säkerhetskopior. Vänligen ta manuella säkerhetskopior för att se till att dina koder är säkra.",
   "offlineNameFaceBannerSubtitle": "Registrera dig för att märka dem och enkelt hitta deras foton senare.",
   "offlineNameFaceBannerTitle": "Ge det här ansiktet ett namn",

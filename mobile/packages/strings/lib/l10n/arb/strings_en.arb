@@ -1299,7 +1299,7 @@
       }
     }
   },
-  "emailVerificationEnableWarning": "To avoid getting locked out of your account, be sure to store a copy of your email 2FA outside of Ente Auth before enabling email verification.",
+  "emailVerificationEnableWarning": "To avoid getting locked out of your account, be sure to store a copy of your email 2FA outside of LiDAR-Knight Auth before enabling email verification.",
   "emailVerificationToggle": "Email verification",
   "emailYourLogs": "Email your logs",
   "@emailYourLogs": {
@@ -1667,7 +1667,7 @@
     }
   },
   "featureBackupCodes": "End to end encrypted\nbackup and sync",
-  "featureOpenSource": "Open source and\naudited by security experts",
+  "featureOpenSource": "Open source fork\nof Ente Auth (AGPL-3.0)",
   "featurePassAutomatically": "Pass them on automatically in emergencies",
   "featureSaveImportant": "Save your important documents and credentials",
   "featureSearchEtc": "Search, Tags, Share,\nNext code and a lot more",
@@ -2895,7 +2895,7 @@
   "offlineHomeSignupBannerAction": "Back up now",
   "offlineHomeSignupBannerDescription": "Encrypted backups across 3 locations to keep your memories safe.",
   "offlineHomeSignupBannerTitle": "Protect your memories forever",
-  "offlineKeyUnavailableMessage": "Ente Auth cannot access the key for your offline codes.",
+  "offlineKeyUnavailableMessage": "LiDAR-Knight Auth cannot access the key for your offline codes.",
   "offlineModeWarning": "You have chosen to proceed without backups. Please take manual backups to make sure your codes are safe.",
   "offlineNameFaceBannerSubtitle": "Sign up to tag them and easily find their photos later.",
   "offlineNameFaceBannerTitle": "Give this face a name",

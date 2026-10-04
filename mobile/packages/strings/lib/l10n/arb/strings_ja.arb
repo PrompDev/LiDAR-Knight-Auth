@@ -837,7 +837,6 @@
     }
   },
   "featureBackupCodes": "エンドツーエンドの暗号化された\nバックアップと同期",
-  "featureOpenSource": "オープンソースと\nセキュリティ専門家による監査",
   "featurePassAutomatically": "緊急時に自動的に引き継ぎ",
   "featureSaveImportant": "重要なドキュメントと認証情報を保存",
   "featureSearchEtc": "検索、タグ、共有、\n次のコードとその他",

@@ -1,4 +1,4 @@
-display_name: Ente Auth
+display_name: LiDAR-Knight Auth
 package_name: enteauth
 license: GPLv3
 
@@ -10,13 +10,13 @@ keywords:
   - Authentication
   - 2FA
 
-generic_name: Ente Auth
+generic_name: LiDAR-Knight Auth
 
 categories:
   - Utility
 
 startup_notify: false
-startup_wm_class: io.ente.auth
+startup_wm_class: io.github.prompdev.lidarknightauth
 
 # Bundled libp11-kit from the Ubuntu build depends on libffi.so.8.
 include:

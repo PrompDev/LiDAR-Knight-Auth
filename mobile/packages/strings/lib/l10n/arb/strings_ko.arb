@@ -481,7 +481,6 @@
     "description": "FAQ link label"
   },
   "featureBackupCodes": "종단간 암호화\n백업 및 동기화",
-  "featureOpenSource": "보안 전문가들이 검사한\n오픈 소스",
   "featurePassAutomatically": "긴급 상황 시 자동으로 전달하세요",
   "featureSaveImportant": "중요한 문서와 자격 증명을 저장하세요",
   "featureSearchEtc": "검색, 태그, 공유\n다음 코드 등 수많은 기능",

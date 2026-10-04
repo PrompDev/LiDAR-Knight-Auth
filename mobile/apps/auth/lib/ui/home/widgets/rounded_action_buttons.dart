@@ -1,9 +1,11 @@
-import 'package:ente_auth/theme/colors.dart';
 import 'package:ente_auth/theme/ente_theme.dart';
+import 'package:ente_auth/theme/lidar_knight_theme.dart';
 import 'package:flutter/material.dart';
 
 enum RoundedButtonType { primary, secondary, primaryInverse, secondaryInverse }
 
+/// Action button. LiDAR-Knight Auth: square blocks in the red-dot palette
+/// (solid red with black text, or a translucent black block with a red rule).
 class RoundedButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -21,19 +23,23 @@ class RoundedButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = getEnteTextTheme(context);
-    final colorScheme = getEnteColorScheme(context);
-    final isDarkTheme = !colorScheme.isLightTheme;
 
-    final (backgroundColor, textColor) = switch (type) {
-      RoundedButtonType.primary => (accentColor, Colors.white),
+    final (backgroundColor, textColor, borderColor) = switch (type) {
+      RoundedButtonType.primary => (LkColors.red, LkColors.black, LkColors.red),
       RoundedButtonType.secondary => (
-        isDarkTheme ? const Color(0x29A75CFF) : const Color(0x0AA75CFF),
-        colorScheme.textBase,
+        LkColors.wash,
+        LkColors.red,
+        LkColors.redOutline,
       ),
-      RoundedButtonType.primaryInverse => (Colors.white, accentColor),
+      RoundedButtonType.primaryInverse => (
+        LkColors.red,
+        LkColors.black,
+        LkColors.red,
+      ),
       RoundedButtonType.secondaryInverse => (
-        Colors.white.withValues(alpha: 0.2),
-        Colors.white,
+        LkColors.row,
+        LkColors.red,
+        LkColors.red,
       ),
     };
 
@@ -45,16 +51,17 @@ class RoundedButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 18),
         decoration: ShapeDecoration(
           color: backgroundColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
+          shape: RoundedRectangleBorder(side: BorderSide(color: borderColor)),
         ),
         child: Center(
           child: Text(
-            label,
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: textTheme.small.copyWith(
               color: textColor,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
             ),
           ),
         ),

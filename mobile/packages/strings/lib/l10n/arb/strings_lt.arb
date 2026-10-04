@@ -1052,7 +1052,6 @@
     }
   },
   "featureBackupCodes": "Visapusiškai šifruotas\natsarginės kopijos kūrimas ir sinchronizavimas",
-  "featureOpenSource": "Atviro kodo ir\naudituota saugumo ekspertų",
   "featureSearchEtc": "Paieška, žymės, bendrinimas,\nsekantis kodas ir daug daugiau",
   "feed": "Srautas",
   "festivities": "Šventinė nuotaika",
@@ -1776,7 +1775,7 @@
   "offlineHomeSignupBannerAction": "Kurti atsarginę kopiją dabar",
   "offlineHomeSignupBannerDescription": "Užšifruotos atsarginės kopijos tarp 3 vietų, kad jūsų prisiminimai būtų saugūs.",
   "offlineHomeSignupBannerTitle": "Apsaugokite savo prisiminimus amžinai",
-  "offlineKeyUnavailableMessage": "„Ente Auth“ negali pasiekti jūsų neprisijungus naudojamų kodų rakto.",
+  "offlineKeyUnavailableMessage": "„LiDAR-Knight Auth“ negali pasiekti jūsų neprisijungus naudojamų kodų rakto.",
   "offlineModeWarning": "Pasirinkote tęsti be atsarginių kopijų. Kad įsitikintumėte, jog jūsų kodai yra saugūs, pasidarykite atsargines kopijas rankiniu būdu.",
   "offlineNameFaceBannerSubtitle": "Užsiregistruokite, kad juos pažymėtumėte ir vėliau lengvai rastumėte jų nuotraukas.",
   "offlineNameFaceBannerTitle": "Duokite šiam veidui vardą",

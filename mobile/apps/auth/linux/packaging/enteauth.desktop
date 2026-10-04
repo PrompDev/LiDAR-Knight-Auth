@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=Ente Auth
-GenericName=Ente Authenticator
+Name=LiDAR-Knight Auth
+GenericName=Two-factor authenticator
 Exec=enteauth %U
 Icon=io.ente.auth
 Type=Application
@@ -8,4 +8,4 @@ Categories=Utility;
 Keywords=Authentication;2FA;
 MimeType=x-scheme-handler/enteauth;
 StartupNotify=false
-StartupWMClass=io.ente.auth
+StartupWMClass=io.github.prompdev.lidarknightauth

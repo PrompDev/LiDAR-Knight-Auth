@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Ente Technologies, Inc." "\0"
-            VALUE "FileDescription", "Ente Auth" "\0"
+            VALUE "CompanyName", "LiDAR-Knight Auth" "\0"
+            VALUE "FileDescription", "LiDAR-Knight Auth (fork of Ente Auth)" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Ente Auth" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 Ente Technologies, Inc. All rights reserved." "\0"
+            VALUE "InternalName", "LiDAR-Knight Auth" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2024 Ente Technologies, Inc. Modifications (C) 2026 LiDAR-Knight Auth contributors. AGPL-3.0." "\0"
             VALUE "OriginalFilename", "auth.exe" "\0"
-            VALUE "ProductName", "Ente Auth" "\0"
+            VALUE "ProductName", "LiDAR-Knight Auth" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -30,13 +30,13 @@ keywords:
   - Authentication
   - 2FA
 
-generic_name: Ente Authenticator
+generic_name: Two-factor authenticator
 
 categories:
   - Utility
 
 startup_notify: false
-startup_wm_class: io.ente.auth
+startup_wm_class: io.github.prompdev.lidarknightauth
 
 supported_mime_type:
   - x-scheme-handler/enteauth

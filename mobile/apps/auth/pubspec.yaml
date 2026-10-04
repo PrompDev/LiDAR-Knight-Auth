@@ -1,5 +1,5 @@
 name: ente_auth
-description: ente two-factor authenticator
+description: LiDAR-Knight Auth, a red-dot two-factor authenticator (a fork of Ente Auth)
 version: 4.4.27+1007
 publish_to: none
 
@@ -165,6 +165,7 @@ flutter:
     - assets/custom-icons/icons/
     - assets/custom-icons/_data/
     - assets/svg/
+    - assets/fonts/doto/
 
   fonts:
     - family: Inter
@@ -174,6 +175,12 @@ flutter:
         - asset: fonts/Inter-Light.ttf
         - asset: fonts/Inter-SemiBold.ttf
         - asset: fonts/Inter-Bold.ttf
+    # LiDAR-Knight Auth: Doto, a square-dot matrix face by Oliver Lalan
+    # (SIL OFL 1.1, assets/fonts/doto/OFL.txt). Bundled, never fetched. Its
+    # default instance is square dots (ROND 0) at the heaviest weight (900).
+    - family: Doto
+      fonts:
+        - asset: assets/fonts/doto/Doto-Variable.ttf
 flutter_launcher_icons:
   image_path: "assets/generation-icons/icon-light.png"
 

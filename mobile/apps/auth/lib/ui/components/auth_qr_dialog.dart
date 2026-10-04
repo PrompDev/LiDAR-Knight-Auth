@@ -5,11 +5,11 @@ import 'dart:ui' as ui;
 
 import 'package:ente_auth/theme/colors.dart';
 import 'package:ente_auth/theme/ente_theme.dart';
+import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
 import 'package:ente_components/ente_components.dart' hide textBaseLight;
 import 'package:ente_strings/ente_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
@@ -111,14 +111,9 @@ class _AuthQrDialogState extends State<AuthQrDialog> {
                       Positioned(
                         top: 2,
                         right: 2,
-                        child: Transform.rotate(
-                          angle: -4 * pi / 180,
-                          child: Image.asset(
-                            'assets/qr_logo.png',
-                            height: qrSize * 0.19,
-                            width: qrSize * 0.19,
-                          ),
-                        ),
+                        // LiDAR-Knight Auth: dot diamond emblem instead of
+                        // the upstream logo.
+                        child: LkDiamondEmblem(size: qrSize * 0.19),
                       ),
                       Padding(
                         padding: EdgeInsets.all(qrSize * 0.07),
@@ -180,15 +175,12 @@ class _AuthQrDialogState extends State<AuthQrDialog> {
                               ),
                             ),
                             SizedBox(height: qrSize * 0.07),
-                            Align(
+                            const Align(
                               alignment: Alignment.centerRight,
-                              child: SvgPicture.asset(
-                                'assets/svg/app-logo.svg',
-                                height: 16,
-                                colorFilter: const ColorFilter.mode(
-                                  accentColor,
-                                  BlendMode.srcIn,
-                                ),
+                              child: LkDotText(
+                                'LiDAR-Knight Auth',
+                                pitch: 2,
+                                color: accentColor,
                               ),
                             ),
                           ],

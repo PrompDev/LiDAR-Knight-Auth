@@ -46,3 +46,8 @@ flutter:
     - family: Gochi Hand
       fonts:
         - asset: fonts/GochiHand-Regular.ttf
+    # LiDAR-Knight Auth: square-dot matrix face (SIL OFL 1.1, see
+    # fonts/Doto-OFL.txt). Its default instance is ROND 0 / wght 900.
+    - family: Doto
+      fonts:
+        - asset: fonts/Doto-Variable.ttf

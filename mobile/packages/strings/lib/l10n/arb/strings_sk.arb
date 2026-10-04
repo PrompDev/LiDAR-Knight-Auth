@@ -301,7 +301,6 @@
     "description": "FAQ link label"
   },
   "featureBackupCodes": "Koncové (end-to-end) šifrovanie\nzáloha a synchronizácia",
-  "featureOpenSource": "Open source a\nauditované expertmi na bezpečnosť",
   "featureSearchEtc": "Vyhľadávanie, tagy, zdieľanie,\nďalší kód a mnoho iného",
   "focusOnSearchBar": "Využívať pole vyhľadávania pri spustení aplikácie",
   "forgotPassword": "Zabudnuté heslo",

@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
     <application android:name="${applicationName}"
-                 android:label="Ente Auth"
+                 android:label="LiDAR-Knight Auth"
                  android:icon="@mipmap/launcher_icon"
                  android:usesCleartextTraffic="true"
                  android:requestLegacyExternalStorage="true"
@@ -88,7 +88,7 @@
         <service
             android:name=".QuickTileService"
             android:icon="@drawable/ic_qs_monochrome"
-            android:label="Ente Auth"
+            android:label="LiDAR-Knight Auth"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true"
             tools:targetApi="24">

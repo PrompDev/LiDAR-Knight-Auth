@@ -1,183 +1,129 @@
 import 'package:ente_auth/theme/colors.dart';
 import 'package:ente_auth/theme/ente_theme.dart';
+import 'package:ente_auth/theme/lidar_knight_theme.dart';
+import 'package:ente_components/ente_components.dart' as components;
 import 'package:flutter/material.dart';
 
-final lightThemeData = ThemeData(
-  fontFamily: 'Inter',
-  brightness: Brightness.light,
-  dividerTheme: const DividerThemeData(color: Colors.black12),
-  hintColor: const Color.fromRGBO(158, 158, 158, 1),
-  primaryColor: const Color.fromRGBO(255, 110, 64, 1),
-  primaryColorLight: const Color.fromRGBO(0, 0, 0, 0.541),
-  iconTheme: const IconThemeData(color: Colors.black),
-  primaryIconTheme: const IconThemeData(
-    color: Colors.red,
-    opacity: 1.0,
-    size: 50.0,
-  ),
-  buttonTheme: const ButtonThemeData(),
-  outlinedButtonTheme: buildOutlinedButtonThemeData(
-    bgDisabled: const Color.fromRGBO(158, 158, 158, 1),
-    bgEnabled: const Color.fromRGBO(0, 0, 0, 1),
-    fgDisabled: const Color.fromRGBO(255, 255, 255, 1),
-    fgEnabled: const Color.fromRGBO(255, 255, 255, 1),
-  ),
-  elevatedButtonTheme: buildElevatedButtonThemeData(
-    onPrimary: const Color.fromRGBO(255, 255, 255, 1),
-    primary: const Color.fromRGBO(0, 0, 0, 1),
-  ),
-  scaffoldBackgroundColor: const Color.fromRGBO(255, 255, 255, 1),
-  appBarTheme: const AppBarTheme().copyWith(
-    backgroundColor: Colors.white,
-    foregroundColor: Colors.black,
-    iconTheme: const IconThemeData(color: Colors.black),
-    elevation: 0,
-  ),
-  textTheme: _buildTextTheme(const Color.fromRGBO(0, 0, 0, 1)),
-  primaryTextTheme: const TextTheme().copyWith(
-    bodyMedium: const TextStyle(color: Colors.yellow),
-    bodyLarge: const TextStyle(color: Colors.orange),
-  ),
-  cardColor: const Color.fromRGBO(250, 250, 250, 1.0),
-  dialogTheme: const DialogThemeData().copyWith(
-    backgroundColor: const Color.fromRGBO(250, 250, 250, 1.0),
-    titleTextStyle: const TextStyle(
-      color: Colors.black,
-      fontSize: 24,
-      fontWeight: FontWeight.w600,
-    ),
-    contentTextStyle: const TextStyle(
-      fontFamily: 'Inter-Medium',
-      color: Colors.black,
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-    ),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-  ),
-  inputDecorationTheme: const InputDecorationTheme().copyWith(
-    focusedBorder: const UnderlineInputBorder(
-      borderSide: BorderSide(color: Color.fromARGB(255, 152, 77, 244)),
-    ),
-  ),
-  checkboxTheme: CheckboxThemeData(
-    side: const BorderSide(color: Colors.black, width: 2),
-    fillColor: WidgetStateProperty.resolveWith((states) {
-      return states.contains(WidgetState.selected)
-          ? const Color.fromRGBO(0, 0, 0, 1)
-          : const Color.fromRGBO(255, 255, 255, 1);
-    }),
-    checkColor: WidgetStateProperty.resolveWith((states) {
-      return states.contains(WidgetState.selected)
-          ? const Color.fromRGBO(255, 255, 255, 1)
-          : const Color.fromRGBO(0, 0, 0, 1);
-    }),
-  ),
+// LiDAR-Knight Auth: the app is dark-only and drawn in red dots. The light
+// theme is the same object as the dark theme, so the system or in-app theme
+// setting can never switch to Ente's light (white and purple) look.
+final lightThemeData = darkThemeData;
 
-  radioTheme: RadioThemeData(
-    fillColor: WidgetStateProperty.resolveWith<Color?>((
-      Set<WidgetState> states,
-    ) {
-      if (states.contains(WidgetState.disabled)) {
-        return null;
-      }
-      if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(102, 187, 106, 1);
-      }
-      return null;
-    }),
-  ),
-  switchTheme: SwitchThemeData(
-    thumbColor: WidgetStateProperty.resolveWith<Color?>((
-      Set<WidgetState> states,
-    ) {
-      if (states.contains(WidgetState.disabled)) {
-        return null;
-      }
-      if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(102, 187, 106, 1);
-      }
-      return null;
-    }),
-    trackColor: WidgetStateProperty.resolveWith<Color?>((
-      Set<WidgetState> states,
-    ) {
-      if (states.contains(WidgetState.disabled)) {
-        return null;
-      }
-      if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(102, 187, 106, 1);
-      }
-      return null;
-    }),
-  ),
-  colorScheme: const ColorScheme.light(
-    primary: Colors.black,
-    secondary: Color.fromARGB(255, 163, 163, 163),
-  ).copyWith(surface: const Color.fromRGBO(255, 255, 255, 1)),
-);
+TextStyle _lkText(double size, {FontWeight weight = FontWeight.w800}) =>
+    TextStyle(
+      fontFamily: kLkFontFamily,
+      color: LkColors.red,
+      fontSize: size,
+      fontWeight: weight,
+    );
 
 final darkThemeData = ThemeData(
-  fontFamily: 'Inter',
+  fontFamily: kLkFontFamily,
   brightness: Brightness.dark,
-  dividerTheme: const DividerThemeData(color: Colors.white12),
-  primaryColorLight: const Color.fromRGBO(255, 255, 255, 0.702),
-  iconTheme: const IconThemeData(color: Colors.white),
+  dividerTheme: const DividerThemeData(color: LkColors.redOutline),
+  primaryColor: LkColors.red,
+  primaryColorLight: LkColors.redFaint,
+  iconTheme: const IconThemeData(color: LkColors.red),
   primaryIconTheme: const IconThemeData(
-    color: Colors.red,
+    color: LkColors.red,
     opacity: 1.0,
     size: 50.0,
   ),
-  hintColor: const Color.fromRGBO(158, 158, 158, 1),
+  hintColor: LkColors.redFaint,
   buttonTheme: const ButtonThemeData().copyWith(
-    buttonColor: const Color.fromRGBO(45, 194, 98, 1.0),
+    buttonColor: LkColors.red,
     height: 56,
   ),
-  textTheme: _buildTextTheme(const Color.fromRGBO(255, 255, 255, 1)),
+  textTheme: _buildTextTheme(LkColors.red),
+  primaryTextTheme: _buildTextTheme(LkColors.red),
   outlinedButtonTheme: buildOutlinedButtonThemeData(
-    bgDisabled: const Color.fromRGBO(158, 158, 158, 1),
-    bgEnabled: const Color.fromRGBO(255, 255, 255, 1),
-    fgDisabled: const Color.fromRGBO(255, 255, 255, 1),
-    fgEnabled: const Color.fromRGBO(0, 0, 0, 1),
+    bgDisabled: LkColors.redDim,
+    bgEnabled: LkColors.red,
+    fgDisabled: LkColors.black,
+    fgEnabled: LkColors.black,
   ),
   elevatedButtonTheme: buildElevatedButtonThemeData(
-    onPrimary: const Color.fromRGBO(0, 0, 0, 1),
-    primary: const Color.fromRGBO(255, 255, 255, 1),
+    onPrimary: LkColors.black,
+    primary: LkColors.red,
   ),
-  scaffoldBackgroundColor: const Color.fromRGBO(0, 0, 0, 1),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      foregroundColor: LkColors.red,
+      textStyle: _lkText(14),
+    ),
+  ),
+  // Translucent: pages show the dot haze painted by LkBackdrop behind them.
+  scaffoldBackgroundColor: Colors.transparent,
+  canvasColor: LkColors.dialog,
   appBarTheme: const AppBarTheme().copyWith(
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.transparent,
+    foregroundColor: LkColors.red,
+    surfaceTintColor: Colors.transparent,
+    iconTheme: const IconThemeData(color: LkColors.red),
+    actionsIconTheme: const IconThemeData(color: LkColors.red),
+    titleTextStyle: _lkText(18, weight: FontWeight.w900),
     elevation: 0,
   ),
-  cardColor: const Color.fromRGBO(10, 15, 15, 1.0),
+  drawerTheme: const DrawerThemeData(
+    backgroundColor: LkColors.dialog,
+    surfaceTintColor: Colors.transparent,
+  ),
+  cardColor: LkColors.row,
+  bottomSheetTheme: const BottomSheetThemeData(
+    backgroundColor: LkColors.dialog,
+    modalBackgroundColor: LkColors.dialog,
+    surfaceTintColor: Colors.transparent,
+  ),
   dialogTheme: const DialogThemeData().copyWith(
-    backgroundColor: const Color.fromRGBO(15, 15, 15, 1.0),
-    titleTextStyle: const TextStyle(
-      color: Colors.white,
-      fontSize: 24,
-      fontWeight: FontWeight.w600,
+    backgroundColor: LkColors.dialog,
+    surfaceTintColor: Colors.transparent,
+    titleTextStyle: _lkText(22, weight: FontWeight.w900),
+    contentTextStyle: _lkText(16),
+    // A solid red rule along the edge.
+    shape: const RoundedRectangleBorder(side: BorderSide(color: LkColors.red)),
+  ),
+  popupMenuTheme: PopupMenuThemeData(
+    color: LkColors.toast,
+    surfaceTintColor: Colors.transparent,
+    textStyle: _lkText(14),
+    shape: const RoundedRectangleBorder(
+      side: BorderSide(color: LkColors.redOutline),
     ),
-    contentTextStyle: const TextStyle(
-      fontFamily: 'Inter-Medium',
-      color: Colors.white,
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
+  ),
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: LkColors.red,
+    foregroundColor: LkColors.black,
+    shape: RoundedRectangleBorder(),
+  ),
+  progressIndicatorTheme: const ProgressIndicatorThemeData(color: LkColors.red),
+  textSelectionTheme: const TextSelectionThemeData(
+    cursorColor: LkColors.red,
+    selectionColor: Color(0x66FF2A12),
+    selectionHandleColor: LkColors.red,
+  ),
+  inputDecorationTheme: const InputDecorationTheme().copyWith(
+    enabledBorder: const UnderlineInputBorder(
+      borderSide: BorderSide(color: LkColors.redOutline),
     ),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    focusedBorder: const UnderlineInputBorder(
+      borderSide: BorderSide(color: LkColors.red),
+    ),
   ),
   checkboxTheme: CheckboxThemeData(
-    side: const BorderSide(color: Colors.grey, width: 2),
+    side: const BorderSide(color: LkColors.red, width: 2),
+    shape: const RoundedRectangleBorder(),
     fillColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(158, 158, 158, 1);
+        return LkColors.red;
       } else {
-        return const Color.fromRGBO(0, 0, 0, 1);
+        return LkColors.black;
       }
     }),
     checkColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(0, 0, 0, 1);
+        return LkColors.black;
       } else {
-        return const Color.fromRGBO(158, 158, 158, 1);
+        return LkColors.red;
       }
     }),
   ),
@@ -186,12 +132,9 @@ final darkThemeData = ThemeData(
       Set<WidgetState> states,
     ) {
       if (states.contains(WidgetState.disabled)) {
-        return null;
+        return LkColors.redDim;
       }
-      if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(102, 187, 106, 1);
-      }
-      return null;
+      return LkColors.red;
     }),
   ),
   switchTheme: SwitchThemeData(
@@ -199,86 +142,89 @@ final darkThemeData = ThemeData(
       Set<WidgetState> states,
     ) {
       if (states.contains(WidgetState.disabled)) {
-        return null;
+        return LkColors.redDim;
       }
       if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(102, 187, 106, 1);
+        // One cream knob dot on a solid red track.
+        return LkColors.cream;
       }
-      return null;
+      return LkColors.red;
     }),
     trackColor: WidgetStateProperty.resolveWith<Color?>((
       Set<WidgetState> states,
     ) {
       if (states.contains(WidgetState.disabled)) {
-        return null;
+        return LkColors.redDeep;
       }
       if (states.contains(WidgetState.selected)) {
-        return const Color.fromRGBO(102, 187, 106, 1);
+        return LkColors.red;
       }
-      return null;
+      return LkColors.black;
+    }),
+    trackOutlineColor: WidgetStateProperty.resolveWith<Color?>((
+      Set<WidgetState> states,
+    ) {
+      return LkColors.red;
     }),
   ),
-  colorScheme: const ColorScheme.dark(
-    primary: Colors.white,
-  ).copyWith(surface: const Color.fromRGBO(0, 0, 0, 1)),
+  colorScheme:
+      const ColorScheme.dark(
+        primary: LkColors.red,
+        onPrimary: LkColors.black,
+        secondary: LkColors.red,
+        onSecondary: LkColors.black,
+        error: LkColors.cream,
+        onError: LkColors.black,
+        surface: LkColors.row,
+        onSurface: LkColors.red,
+      ).copyWith(
+        surfaceContainerLowest: LkColors.veil,
+        surfaceContainerLow: LkColors.row,
+        surfaceContainer: LkColors.row,
+        surfaceContainerHigh: LkColors.dialog,
+        surfaceContainerHighest: LkColors.toast,
+        onSurfaceVariant: LkColors.redFaint,
+        outline: LkColors.redOutline,
+        outlineVariant: LkColors.redSoft,
+      ),
+  // The shared Ente packages read these extensions before their own purple
+  // defaults, so buttons, sheets, dialogs and settings follow the dot theme.
+  extensions: <ThemeExtension<dynamic>>[
+    lkEnteUiColorScheme,
+    const components.ComponentColorTokens(lkComponentColors),
+  ],
 );
 
 TextTheme _buildTextTheme(Color textColor) {
-  return const TextTheme().copyWith(
-    headlineMedium: TextStyle(
-      color: textColor,
-      fontSize: 32,
-      fontWeight: FontWeight.w600,
-      fontFamily: 'Inter',
-    ),
-    headlineSmall: TextStyle(
-      color: textColor,
-      fontSize: 24,
-      fontWeight: FontWeight.w600,
-      fontFamily: 'Inter',
-    ),
-    titleLarge: TextStyle(
-      color: textColor,
-      fontSize: 18,
-      fontFamily: 'Inter',
-      fontWeight: FontWeight.w600,
-    ),
-    titleMedium: TextStyle(
-      color: textColor,
-      fontFamily: 'Inter',
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-    ),
-    titleSmall: TextStyle(
-      color: textColor,
-      fontFamily: 'Inter',
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-    ),
-    bodyLarge: TextStyle(
-      fontFamily: 'Inter',
-      color: textColor,
-      fontSize: 16,
-      fontWeight: FontWeight.w500,
-    ),
-    bodyMedium: TextStyle(
-      fontFamily: 'Inter',
-      color: textColor,
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-    ),
-    bodySmall: TextStyle(
-      color: textColor.withValues(alpha: 0.4),
-      fontSize: 10,
-      fontWeight: FontWeight.w500,
-    ),
-    labelSmall: TextStyle(
-      fontFamily: 'Inter',
-      color: textColor,
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      decoration: TextDecoration.underline,
-    ),
+  // Doto is a dot-matrix face. Its default instance is square dots at the
+  // heaviest weight; heavy weights keep the dots from turning into specks.
+  TextStyle style(
+    double size, {
+    FontWeight weight = FontWeight.w800,
+    double alpha = 1,
+  }) => TextStyle(
+    color: alpha == 1 ? textColor : textColor.withValues(alpha: alpha),
+    fontSize: size,
+    fontWeight: weight,
+    fontFamily: kLkFontFamily,
+  );
+
+  return TextTheme(
+    displayLarge: style(48, weight: FontWeight.w900),
+    displayMedium: style(40, weight: FontWeight.w900),
+    displaySmall: style(34, weight: FontWeight.w900),
+    headlineLarge: style(32, weight: FontWeight.w900),
+    headlineMedium: style(32, weight: FontWeight.w900),
+    headlineSmall: style(24, weight: FontWeight.w900),
+    titleLarge: style(18, weight: FontWeight.w900),
+    titleMedium: style(16),
+    titleSmall: style(14),
+    bodyLarge: style(16),
+    bodyMedium: style(14),
+    bodySmall: style(12, alpha: 0.7),
+    labelLarge: style(14, weight: FontWeight.w900),
+    labelMedium: style(13),
+    labelSmall: style(14).copyWith(decoration: TextDecoration.underline),
   );
 }
 
@@ -291,10 +237,10 @@ extension CustomColorScheme on ColorScheme {
 
   Color get fabForegroundColor => brightness == Brightness.light
       ? const Color.fromRGBO(255, 255, 255, 1)
-      : const Color.fromRGBO(40, 40, 40, 1);
+      : LkColors.black;
 
   Color get fabBackgroundColor => brightness != Brightness.light
-      ? const Color.fromRGBO(255, 255, 255, 1)
+      ? LkColors.red
       : const Color.fromRGBO(40, 40, 40, 1);
 
   Color get defaultTextColor =>
@@ -305,64 +251,64 @@ extension CustomColorScheme on ColorScheme {
 
   Color get boxSelectColor => brightness == Brightness.light
       ? const Color.fromRGBO(67, 186, 108, 1)
-      : const Color.fromRGBO(16, 32, 32, 1);
+      : LkColors.redDeeper;
 
   Color get boxUnSelectColor => brightness == Brightness.light
       ? const Color.fromRGBO(240, 240, 240, 1)
-      : const Color.fromRGBO(8, 18, 18, 0.4);
+      : LkColors.row;
 
-  Color get alternativeColor => const Color.fromARGB(255, 152, 77, 244);
+  Color get alternativeColor => LkColors.red;
 
   Color get dynamicFABBackgroundColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1)
-      : const Color.fromRGBO(48, 48, 48, 1);
+      : LkColors.redDeeper;
 
-  Color get dynamicFABTextColor => const Color.fromRGBO(255, 255, 255, 1);
+  Color get dynamicFABTextColor => LkColors.red;
 
   // todo: use brightness == Brightness.light for changing color for dark/light theme
   ButtonStyle? get optionalActionButtonStyle => buildElevatedButtonThemeData(
-    onPrimary: const Color(0xFF777777),
-    primary: const Color(0xFFF0F0F0),
+    onPrimary: LkColors.red,
+    primary: LkColors.redDeep,
     elevation: 0,
   ).style;
 
   Color get recoveryKeyBoxColor => brightness == Brightness.light
       ? const Color.fromARGB(51, 150, 0, 220)
-      : const Color.fromARGB(255, 174, 56, 247);
+      : LkColors.redDeep;
 
   Color get frostyBlurBackdropFilterColor => brightness == Brightness.light
       ? const Color.fromRGBO(238, 238, 238, 0.5)
-      : const Color.fromRGBO(48, 48, 48, 0.5);
+      : LkColors.veil;
 
   Color get iconColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.75)
-      : const Color.fromRGBO(255, 255, 255, 1);
+      : LkColors.red;
 
   Color get bgColorForQuestions => brightness == Brightness.light
       ? const Color.fromRGBO(255, 255, 255, 1)
-      : const Color.fromRGBO(10, 15, 15, 1.0);
+      : LkColors.row;
 
-  Color get greenText => const Color.fromARGB(255, 40, 190, 113);
+  Color get greenText => LkColors.red;
 
   Color get cupertinoPickerTopColor => brightness == Brightness.light
       ? const Color.fromARGB(255, 238, 238, 238)
-      : const Color.fromRGBO(255, 255, 255, 1).withValues(alpha: 0.1);
+      : LkColors.redSoft;
 
   Color get stepProgressUnselectedColor => brightness == Brightness.light
       ? const Color.fromRGBO(196, 196, 196, 0.6)
-      : const Color.fromRGBO(255, 255, 255, 0.7);
+      : LkColors.redOutline;
 
   Color get gNavBackgroundColor => brightness == Brightness.light
       ? const Color.fromRGBO(196, 196, 196, 0.6)
-      : const Color.fromRGBO(40, 40, 40, 0.6);
+      : LkColors.row;
 
   Color get gNavBarActiveColor => brightness == Brightness.light
       ? const Color.fromRGBO(255, 255, 255, 0.6)
-      : const Color.fromRGBO(255, 255, 255, 0.9);
+      : LkColors.red;
 
   Color get gNavIconColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 0.8)
-      : const Color.fromRGBO(255, 255, 255, 0.8);
+      : LkColors.red;
 
   Color get gNavActiveIconColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 0.8)
@@ -370,47 +316,47 @@ extension CustomColorScheme on ColorScheme {
 
   Color get galleryThumbBackgroundColor => brightness == Brightness.light
       ? const Color.fromRGBO(240, 240, 240, 1)
-      : const Color.fromRGBO(20, 20, 20, 1);
+      : LkColors.redDeep;
 
   Color get galleryThumbDrawColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.8)
-      : const Color.fromRGBO(255, 255, 255, 1).withValues(alpha: 0.5);
+      : LkColors.redFaint;
 
   Color get backupEnabledBgColor => brightness == Brightness.light
       ? const Color.fromRGBO(230, 230, 230, 0.95)
-      : const Color.fromRGBO(10, 40, 40, 0.3);
+      : LkColors.wash;
 
   Color get dotsIndicatorActiveColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.5)
-      : const Color.fromRGBO(255, 255, 255, 1).withValues(alpha: 0.5);
+      : LkColors.red;
 
   Color get dotsIndicatorInactiveColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.12)
-      : const Color.fromRGBO(255, 255, 255, 1).withValues(alpha: 0.12);
+      : LkColors.redDim;
 
   Color get toastTextColor => brightness == Brightness.light
       ? const Color.fromRGBO(255, 255, 255, 1)
-      : const Color.fromRGBO(0, 0, 0, 1);
+      : LkColors.red;
 
   Color get toastBackgroundColor => brightness == Brightness.light
       ? const Color.fromRGBO(24, 24, 24, 0.95)
-      : const Color.fromRGBO(255, 255, 255, 0.95);
+      : LkColors.toast;
 
   Color get subTextColor => brightness == Brightness.light
       ? const Color.fromRGBO(180, 180, 180, 1)
-      : const Color.fromRGBO(100, 100, 100, 1);
+      : LkColors.redFaint;
 
   Color get themeSwitchInactiveIconColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.5)
-      : const Color.fromRGBO(255, 255, 255, 1).withValues(alpha: 0.5);
+      : LkColors.redFaint;
 
   Color get searchResultsColor => brightness == Brightness.light
       ? const Color.fromRGBO(245, 245, 245, 1.0)
-      : const Color.fromRGBO(30, 30, 30, 1.0);
+      : LkColors.dialog;
 
   Color get mutedTextColor => brightness == Brightness.light
       ? const Color.fromRGBO(80, 80, 80, 1)
-      : const Color.fromRGBO(150, 150, 150, 1);
+      : LkColors.redFaint;
 
   Color get searchResultsBackgroundColor => brightness == Brightness.light
       ? Colors.black.withValues(alpha: 0.32)
@@ -418,11 +364,10 @@ extension CustomColorScheme on ColorScheme {
 
   Color get codeCardBackgroundColor => brightness == Brightness.light
       ? const Color.fromRGBO(246, 246, 246, 1)
-      : const Color.fromRGBO(40, 40, 40, 0.6);
+      : LkColors.row;
 
-  Color get primaryColor => brightness == Brightness.light
-      ? const Color(0xFF9610D6)
-      : const Color(0xFF9610D6);
+  Color get primaryColor =>
+      brightness == Brightness.light ? LkColors.red : LkColors.red;
 
   EnteTheme get enteTheme =>
       brightness == Brightness.light ? lightTheme : darkTheme;
@@ -440,14 +385,15 @@ OutlinedButtonThemeData buildOutlinedButtonThemeData({
   return OutlinedButtonThemeData(
     style:
         OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: const RoundedRectangleBorder(),
           fixedSize: const Size.fromHeight(56),
           alignment: Alignment.center,
           padding: const EdgeInsets.fromLTRB(50, 16, 50, 16),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Inter-SemiBold',
+            fontWeight: FontWeight.w900,
+            fontFamily: kLkFontFamily,
             fontSize: 18,
+            letterSpacing: 1.5,
           ),
         ).copyWith(
           backgroundColor: WidgetStateProperty.resolveWith<Color>((
@@ -483,14 +429,13 @@ ElevatedButtonThemeData buildElevatedButtonThemeData({
       elevation: elevation,
       alignment: Alignment.center,
       textStyle: const TextStyle(
-        fontWeight: FontWeight.w600,
-        fontFamily: 'Inter-SemiBold',
+        fontWeight: FontWeight.w900,
+        fontFamily: kLkFontFamily,
         fontSize: 18,
+        letterSpacing: 1.5,
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(4)),
-      ),
+      shape: const RoundedRectangleBorder(),
     ),
   );
 }

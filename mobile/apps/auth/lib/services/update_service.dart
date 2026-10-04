@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:ente_auth/core/constants.dart';
 import 'package:ente_auth/services/notification_service.dart';
 import 'package:ente_network/network.dart';
-import 'package:ente_pure_utils/ente_pure_utils.dart';
-import 'package:flutter/services.dart' show appFlavor;
 import 'package:logging/logging.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -116,7 +114,12 @@ class UpdateService {
   }
 
   bool supportsInAppUpdates() {
-    return appFlavor == "independent" || PlatformDetector.isDesktop();
+    // LiDAR-Knight Auth: Ente's update feed (fetched above) offers Ente's own
+    // signed binaries, which would replace this fork, and the request would
+    // leave the device on every launch. In-app update checks are therefore
+    // switched off; new versions ship as GitHub releases of the fork.
+    // Upstream rule: appFlavor == "independent" || PlatformDetector.isDesktop()
+    return false;
   }
 }
 

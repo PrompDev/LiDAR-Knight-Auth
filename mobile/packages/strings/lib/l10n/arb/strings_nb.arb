@@ -320,7 +320,6 @@
     "description": "FAQ link label"
   },
   "featureBackupCodes": "Ende til ende-kryptert\nsikkerhetskopier og synkroniser",
-  "featureOpenSource": "Åpen kildekode og\nrevidert av sikkerhetseksperter",
   "featureSearchEtc": "Søk, merk, del,\nneste kode og mye mer",
   "focusOnSearchBar": "Fokuser på søk ved oppstart av appen",
   "forgotPassword": "Glemt passordet",

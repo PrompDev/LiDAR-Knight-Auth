@@ -13,11 +13,13 @@ import 'package:ente_auth/services/preference_service.dart';
 import 'package:ente_auth/store/code_display_store.dart';
 import 'package:ente_auth/store/code_store.dart';
 import 'package:ente_auth/theme/ente_theme.dart';
+import 'package:ente_auth/theme/lidar_knight_theme.dart';
 import 'package:ente_auth/ui/code_timer_progress.dart';
 import 'package:ente_auth/ui/code_widget_layout_utils.dart';
 import 'package:ente_auth/ui/components/auth_qr_dialog.dart';
 import 'package:ente_auth/ui/components/note_dialog.dart';
 import 'package:ente_auth/ui/home/shortcuts.dart';
+import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
 import 'package:ente_auth/ui/share/code_share.dart';
 import 'package:ente_auth/ui/utils/icon_utils.dart';
 import 'package:ente_auth/utils/dialog_util.dart';
@@ -63,6 +65,8 @@ class _CodeWidgetState extends State<CodeWidget> {
   Timer? _everySecondTimer;
   final ValueNotifier<String> _currentCode = ValueNotifier<String>("");
   final ValueNotifier<String> _nextCode = ValueNotifier<String>("");
+  // LiDAR-Knight Auth: the code flashes cream for two 12 fps frames on copy.
+  final ValueNotifier<bool> _copyFlash = ValueNotifier<bool>(false);
   final Logger logger = Logger("_CodeWidgetState");
   bool _isInitialized = false;
   late bool hasConfiguredAccount;
@@ -114,6 +118,7 @@ class _CodeWidgetState extends State<CodeWidget> {
     _everySecondTimer?.cancel();
     _currentCode.dispose();
     _nextCode.dispose();
+    _copyFlash.dispose();
     super.dispose();
   }
 
@@ -161,7 +166,7 @@ class _CodeWidgetState extends State<CodeWidget> {
             children: [
               if (widget.code.type.isTOTPCompatible)
                 SizedBox(
-                  height: widget.isCompactMode ? 1 : 3,
+                  height: widget.isCompactMode ? 2 : 3,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
                     switchInCurve: Curves.easeIn,
@@ -252,7 +257,6 @@ class _CodeWidgetState extends State<CodeWidget> {
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeInOut,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
                     color: isSelected
                         ? colorScheme.primary400.withValues(alpha: 0.10)
                         : Theme.of(context).colorScheme.codeCardBackgroundColor,
@@ -260,15 +264,12 @@ class _CodeWidgetState extends State<CodeWidget> {
                         ? colorScheme.pinnedCardBoxShadow
                         : [],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                  child: ClipRect(
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
                         focusNode: widget.focusNode,
-                        customBorder: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        customBorder: const RoundedRectangleBorder(),
                         // InkWell handles focus natively.
                         canRequestFocus: true,
                         onFocusChange: (hasFocus) {
@@ -306,20 +307,26 @@ class _CodeWidgetState extends State<CodeWidget> {
                   ),
                 ),
               ),
+              // LiDAR-Knight Auth: a dotted one-dot outline instead of a
+              // filled rounded card. Selected or focused rows get a
+              // full-strength outline with a diamond marker at each end.
+              const Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: true,
+                  child: CustomPaint(painter: LkDotOutlinePainter()),
+                ),
+              ),
               Positioned.fill(
                 child: IgnorePointer(
                   ignoring: true,
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 180),
                     curve: Curves.easeInOut,
-                    opacity: isSelected ? 1 : 0,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: colorScheme.primary400,
-                          width: 2,
-                        ),
+                    opacity: isSelected || _isFocused ? 1 : 0,
+                    child: CustomPaint(
+                      painter: LkDotOutlinePainter(
+                        color: colorScheme.primary400,
+                        showMarkers: true,
                       ),
                     ),
                   ),
@@ -402,11 +409,24 @@ class _CodeWidgetState extends State<CodeWidget> {
               builder: (context, value, child) {
                 return Material(
                   type: MaterialType.transparency,
-                  child: AutoSizeText(
-                    _getFormattedCode(value),
-                    style: TextStyle(fontSize: widget.isCompactMode ? 14 : 24),
-                    maxLines: 1,
-                    textDirection: TextDirection.ltr,
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _copyFlash,
+                    builder: (context, flash, _) {
+                      // Red dot-matrix digits, grouped 3 + 3; cream while
+                      // the copy flash is on.
+                      return AutoSizeText(
+                        _getFormattedCode(value),
+                        style: TextStyle(
+                          fontFamily: kLkFontFamily,
+                          fontWeight: FontWeight.w900,
+                          fontSize: widget.isCompactMode ? 18 : 34,
+                          letterSpacing: widget.isCompactMode ? 1 : 2,
+                          color: flash ? LkColors.cream : LkColors.red,
+                        ),
+                        maxLines: 1,
+                        textDirection: TextDirection.ltr,
+                      );
+                    },
                   ),
                 );
               },
@@ -436,8 +456,12 @@ class _CodeWidgetState extends State<CodeWidget> {
                               child: Text(
                                 _getFormattedCode(value),
                                 style: TextStyle(
-                                  fontSize: widget.isCompactMode ? 12 : 18,
-                                  color: Colors.grey,
+                                  fontFamily: kLkFontFamily,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: widget.isCompactMode ? 13 : 18,
+                                  letterSpacing: 1,
+                                  // Cream highlight: the code that comes next.
+                                  color: LkColors.cream,
                                 ),
                                 textDirection: TextDirection.ltr,
                               ),
@@ -463,7 +487,7 @@ class _CodeWidgetState extends State<CodeWidget> {
                         child: const Icon(
                           Icons.forward_outlined,
                           size: 32,
-                          color: Colors.grey,
+                          color: LkColors.cream,
                         ),
                       ),
                     ],
@@ -530,7 +554,7 @@ class _CodeWidgetState extends State<CodeWidget> {
                                         ),
                                         Icon(
                                           Icons.check,
-                                          color: Colors.white,
+                                          color: LkColors.black,
                                           size: isCompactMode ? 8 : 12,
                                         ),
                                       ],
@@ -841,7 +865,17 @@ class _CodeWidgetState extends State<CodeWidget> {
     );
   }
 
+  void _flashCopied() {
+    _copyFlash.value = true;
+    unawaited(
+      Future.delayed(const Duration(milliseconds: 166), () {
+        if (mounted) _copyFlash.value = false;
+      }),
+    );
+  }
+
   void _copyCurrentOTPToClipboard() {
+    _flashCopied();
     _copyToClipboard(
       _getCurrentOTP(),
       confirmationMessage: context.strings.copiedToClipboard,

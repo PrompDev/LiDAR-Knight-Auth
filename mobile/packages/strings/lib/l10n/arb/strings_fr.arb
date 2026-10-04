@@ -1325,7 +1325,6 @@
     }
   },
   "featureBackupCodes": "Synchronisation et sauvegarde cryptés de bout-en-bout",
-  "featureOpenSource": "Open source et\naudité par des experts en sécurité",
   "featurePassAutomatically": "Transmets-les automatiquement en cas d'urgence",
   "featureSaveImportant": "Enregistre tes documents et identifiants importants",
   "featureSearchEtc": "Recherche, Tags, Partage,\nCode suivant et bien plus encore",

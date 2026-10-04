@@ -928,7 +928,6 @@
     }
   },
   "featureBackupCodes": "Kompleksowo szyfrowane\nkopie zapasowe i synchronizacja",
-  "featureOpenSource": "Oprogramowanie typu open source,\naudytowane przez ekspertów ds. bezpieczeństwa",
   "featurePassAutomatically": "Przekazuj je automatycznie w nagłych wypadkach",
   "featureSaveImportant": "Zapisuj ważne dokumenty i dane logowania",
   "featureSearchEtc": "Szukaj, tagi, udostępnianie,\nnastępny kod i wiele więcej",
