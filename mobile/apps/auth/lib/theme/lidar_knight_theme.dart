@@ -8,11 +8,9 @@ import 'package:ente_components/ente_components.dart' as components;
 import 'package:ente_ui/theme/colors.dart' as ui;
 import 'package:flutter/material.dart';
 
-/// The dot-matrix font bundled with the app (Doto, SIL OFL 1.1).
-///
-/// Its default instance is square dots (ROND 0) at the heaviest weight
-/// (wght 900), so no font variations are needed for the red-dot look.
-const String kLkFontFamily = 'Doto';
+/// Bundled Inter keeps security labels and codes legible at compact sizes.
+/// Dot text remains available for decorative artwork only.
+const String kLkFontFamily = 'Inter';
 
 /// LiDAR-Knight Auth palette: hot red dots on black, rare cream highlights.
 class LkColors {
@@ -23,6 +21,10 @@ class LkColors {
 
   /// Highlight dots only (next code, last seconds, copy flash, errors).
   static const Color cream = Color(0xFFFFD8CC);
+
+  static const Color text = Color(0xFFF2F1EA);
+  static const Color textMuted = Color(0xFFB8BBC0);
+  static const Color textFaint = Color(0xFF969BA3);
 
   /// Haze and disabled states only. Never used for text.
   static const Color redDim = Color(0xFF7A1A10);
@@ -39,11 +41,11 @@ class LkColors {
 
   static const Color black = Color(0xFF000000);
 
-  /// Translucent black surfaces, from the most to the least see-through.
-  static const Color veil = Color(0x8C000000); // .55
-  static const Color row = Color(0xC7000000); // .78
-  static const Color dialog = Color(0xDB000000); // .86
-  static const Color toast = Color(0xE6000000); // .90
+  /// Opaque surfaces: desktop content never bleeds through readable text.
+  static const Color veil = Color(0xFF000000);
+  static const Color row = Color(0xFF101216);
+  static const Color dialog = Color(0xFF15171B);
+  static const Color toast = Color(0xFF1B1E23);
 
   /// A faint red wash for selected rows.
   static const Color wash = Color(0x14FF2A12);
@@ -76,9 +78,9 @@ final ui.EnteColorScheme lkEnteUiColorScheme =
       backgroundBase: LkColors.veil,
       backgroundElevated: LkColors.row,
       backgroundElevated2: LkColors.dialog,
-      textBase: LkColors.red,
-      textMuted: LkColors.redMuted,
-      textFaint: LkColors.redFaint,
+      textBase: LkColors.text,
+      textMuted: LkColors.textMuted,
+      textFaint: LkColors.textFaint,
       fillBase: LkColors.red,
       fillBasePressed: LkColors.redDark,
       fillMuted: LkColors.redSoft,
@@ -114,12 +116,12 @@ final ui.EnteColorScheme lkEnteUiColorScheme =
       backupEnabledBgColor: LkColors.wash,
       dotsIndicatorActiveColor: LkColors.red,
       dotsIndicatorInactiveColor: LkColors.redDim,
-      toastTextColor: LkColors.red,
+      toastTextColor: LkColors.text,
       toastBackgroundColor: LkColors.toast,
-      subTextColor: LkColors.redFaint,
+      subTextColor: LkColors.textFaint,
       themeSwitchInactiveIconColor: LkColors.redFaint,
       searchResultsColor: LkColors.dialog,
-      mutedTextColor: LkColors.redFaint,
+      mutedTextColor: LkColors.textFaint,
       searchResultsBackgroundColor: const Color(0xA3000000),
       codeCardBackgroundColor: LkColors.row,
       primaryColor: LkColors.red,
@@ -171,12 +173,12 @@ const components.ColorTokens lkComponentColors = components.ColorTokens(
   warningDarker: Color(0xFFD1A698),
   cautionLight: LkColors.redDeep,
   caution: LkColors.cream,
-  textLight: LkColors.redFaint,
-  textBase: LkColors.red,
-  textDark: LkColors.red,
-  textDarker: LkColors.redMuted,
-  textLighter: LkColors.redFaint,
-  textLightest: LkColors.redDim,
+  textLight: LkColors.textFaint,
+  textBase: LkColors.text,
+  textDark: LkColors.text,
+  textDarker: LkColors.textMuted,
+  textLighter: LkColors.textFaint,
+  textLightest: LkColors.textFaint,
   textReverse: LkColors.black,
   iconColor: LkColors.red,
   backgroundBase: LkColors.dialog,

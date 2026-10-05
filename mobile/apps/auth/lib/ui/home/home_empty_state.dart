@@ -1,11 +1,12 @@
-import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
+import 'package:ente_auth/theme/lidar_knight_theme.dart';
 import 'package:ente_auth/ui/settings/data/import_page.dart';
 import 'package:ente_auth/utils/platform_util.dart';
-import 'package:ente_components/ente_components.dart';
 import 'package:ente_pure_utils/ente_pure_utils.dart';
 import 'package:ente_strings/ente_strings.dart';
 import 'package:flutter/material.dart';
 
+/// Compact standard-auth entry. LiDAR admin enrollment has its own tab.
+/// All QR/manual/import routes remain their original callbacks.
 class HomeEmptyStateWidget extends StatelessWidget {
   final VoidCallback? onScanTap;
   final VoidCallback? onImportImageTap;
@@ -21,117 +22,108 @@ class HomeEmptyStateWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.strings;
-    final colors = context.componentColors;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final extraBottomPadding = PlatformDetector.isMobile()
-        ? (bottomPadding > 0 ? bottomPadding : 24.0)
-        : 24.0;
-
+    final isMobile = PlatformDetector.isMobile();
+    final safeBottom = MediaQuery.of(context).padding.bottom;
     return Semantics(
       container: true,
       identifier: 'auth_empty_state',
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: Spacing.xl,
-                right: Spacing.xl,
-                top: Spacing.xl,
-                bottom: extraBottomPadding,
-              ),
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 12 + safeBottom),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // LiDAR-Knight Auth: a pulsing dot diamond around a
-                        // keyhole instead of the upstream illustration.
-                        const SizedBox(
-                          height: 188,
-                          child: Center(child: LkDiamondEmblem(size: 165)),
-                        ),
-                        const SizedBox(height: Spacing.xxl),
-                        SizedBox(
-                          width: 240,
-                          child: Text(
-                            l10n.setupFirstAccount,
-                            textAlign: TextAlign.center,
-                            style: TextStyles.h1.copyWith(
-                              color: colors.textBase,
-                            ),
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/icons/lidar-knight-auth.png',
+                        width: 40,
+                        height: 40,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          l10n.setupFirstAccount,
+                          style: const TextStyle(
+                            fontFamily: kLkFontFamily,
+                            fontWeight: FontWeight.w600,
+                            color: LkColors.text,
+                            fontSize: 17,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Standard authenticator accounts. Your codes are generated '
+                    'privately on this device.',
+                    style: TextStyle(
+                      fontFamily: kLkFontFamily,
+                      color: LkColors.textMuted,
+                      fontSize: 12,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: Spacing.xxl),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 360),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (PlatformDetector.isMobile()) ...[
-                            Semantics(
-                              button: true,
-                              identifier: 'auth_empty_scan',
-                              child: ButtonComponent(
-                                label: l10n.scanAQrCode,
-                                onTap: onScanTap,
-                              ),
-                            ),
-                          ] else ...[
-                            Semantics(
-                              button: true,
-                              identifier: 'auth_empty_gallery',
-                              child: ButtonComponent(
-                                label: l10n.importFromGallery,
-                                onTap: onImportImageTap,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: Spacing.md),
-                          Semantics(
-                            button: true,
-                            identifier: 'auth_empty_manual_setup',
-                            child: ButtonComponent(
-                              label: l10n.importEnterSetupKey,
-                              variant: ButtonComponentVariant.secondary,
-                              onTap: onManuallySetupTap,
-                            ),
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              ButtonComponent(
-                                label: l10n.importCodes,
-                                size: ButtonComponentSize.small,
-                                variant: ButtonComponentVariant.link,
-                                onTap: () {
-                                  routeToPage(context, const ImportCodePage());
-                                },
-                              ),
-                              ButtonComponent(
-                                label: l10n.faq,
-                                size: ButtonComponentSize.small,
-                                variant: ButtonComponentVariant.link,
-                                onTap: () {
-                                  PlatformUtil.openUrlInBrowser(
-                                    'https://ente.com/help/auth/faq',
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
+                  const SizedBox(height: 16),
+                  Semantics(
+                    button: true,
+                    identifier: isMobile
+                        ? 'auth_empty_scan'
+                        : 'auth_empty_gallery',
+                    child: ElevatedButton.icon(
+                      onPressed: isMobile ? onScanTap : onImportImageTap,
+                      icon: Icon(
+                        isMobile ? Icons.qr_code_scanner : Icons.image_outlined,
+                        size: 18,
+                      ),
+                      label: Text(
+                        isMobile ? l10n.scanAQrCode : l10n.importFromGallery,
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 42),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Semantics(
+                    button: true,
+                    identifier: 'auth_empty_manual_setup',
+                    child: OutlinedButton.icon(
+                      onPressed: onManuallySetupTap,
+                      icon: const Icon(Icons.key_outlined, size: 18),
+                      label: Text(l10n.importEnterSetupKey),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: LkColors.text,
+                        backgroundColor: LkColors.row,
+                        side: const BorderSide(color: LkColors.redOutline),
+                        minimumSize: const Size(0, 42),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () =>
+                            routeToPage(context, const ImportCodePage()),
+                        child: Text(l10n.importCodes),
+                      ),
+                      TextButton(
+                        onPressed: () => PlatformUtil.openUrlInBrowser(
+                          'https://ente.com/help/auth/faq',
+                        ),
+                        child: Text(l10n.faq),
+                      ),
+                    ],
                   ),
                 ],
               ),

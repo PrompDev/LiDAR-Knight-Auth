@@ -36,6 +36,7 @@ import 'package:ente_auth/ui/home/shortcuts.dart';
 import 'package:ente_auth/ui/home/speed_dial_label_widget.dart';
 import 'package:ente_auth/ui/home/widgets/auth_logo_widget.dart';
 import 'package:ente_auth/ui/home/widgets/home_search_field.dart';
+import 'package:ente_auth/ui/lidar_knight/admin_vault.dart';
 import 'package:ente_auth/ui/reorder_codes_page.dart';
 import 'package:ente_auth/ui/scanner_page.dart';
 import 'package:ente_auth/ui/settings/data/import/google_auth_import.dart';
@@ -84,6 +85,7 @@ String addedCodeFocusSearchQuery(Code code) {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _lidarAdminTab = true;
   final _codeDisplayStore = CodeDisplayStore.instance;
   late final _settingsPage = SettingsPage(
     emailNotifier: UserService.instance.emailValueNotifier,
@@ -1100,8 +1102,8 @@ class _HomePageState extends State<HomePage> {
     CodeStore.instance
         .getAllCodes()
         .then((codes) {
-          _allCodes = codes;
-          CodeDisplayStore.instance.reconcileSelections(codes);
+          _allCodes = codes.where((c) => !c.display.lidarLocked).toList();
+          CodeDisplayStore.instance.reconcileSelections(_allCodes!);
           hasTrashedCodes = false;
           hasNonTrashedCodes = false;
 
@@ -1470,7 +1472,70 @@ class _HomePageState extends State<HomePage> {
                       LogicalKeySet(LogicalKeyboardKey.keyN):
                           const CopyNextIntent(),
                     },
-                    child: _getBody(),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 6),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextButton.icon(
+                                  onPressed: () =>
+                                      setState(() => _lidarAdminTab = true),
+                                  icon: Icon(
+                                    Icons.shield_outlined,
+                                    size: 15,
+                                    color: _lidarAdminTab
+                                        ? const Color(0xFFFF6558)
+                                        : const Color(0xFF8D929A),
+                                  ),
+                                  label: Text(
+                                    'LIDAR ADMIN',
+                                    style: TextStyle(
+                                      color: _lidarAdminTab
+                                          ? const Color(0xFFF0EFE9)
+                                          : const Color(0xFF8D929A),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: TextButton.icon(
+                                  onPressed: () =>
+                                      setState(() => _lidarAdminTab = false),
+                                  icon: Icon(
+                                    Icons.key_outlined,
+                                    size: 15,
+                                    color: !_lidarAdminTab
+                                        ? const Color(0xFFFF6558)
+                                        : const Color(0xFF8D929A),
+                                  ),
+                                  label: Text(
+                                    'AUTHENTICATOR',
+                                    style: TextStyle(
+                                      color: !_lidarAdminTab
+                                          ? const Color(0xFFF0EFE9)
+                                          : const Color(0xFF8D929A),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: _lidarAdminTab
+                              ? const LidarAdminVault()
+                              : _getBody(),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -1484,7 +1549,8 @@ class _HomePageState extends State<HomePage> {
             appBar: appBar,
             floatingActionButton: isSelecting
                 ? null
-                : (!_hasLoaded ||
+                : (_lidarAdminTab ||
+                          !_hasLoaded ||
                           (_allCodes?.isEmpty ?? true) ||
                           !PreferenceService.instance.hasShownCoachMark()
                       ? null

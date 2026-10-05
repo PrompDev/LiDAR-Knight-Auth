@@ -94,6 +94,13 @@ class Configuration extends BaseConfiguration
   }
 
   Future<void> optForOfflineMode() async {
+    await ensureOfflineStorageKey();
+    await _preferences.setBool(hasOptedForOfflineModeKey, true);
+  }
+
+  /// Allows a local-only LiDAR credential beside ordinary synced accounts.
+  /// Does not change the user's selected online/offline account mode.
+  Future<void> ensureOfflineStorageKey() async {
     if ((await _secureStorage.containsKey(key: offlineAuthSecretKey))) {
       _offlineAuthKey = await _secureStorage.read(key: offlineAuthSecretKey);
     } else {
@@ -103,7 +110,6 @@ class Configuration extends BaseConfiguration
         value: _offlineAuthKey,
       );
     }
-    await _preferences.setBool(hasOptedForOfflineModeKey, true);
   }
 
   Future<String?> getBackupPassword() async {

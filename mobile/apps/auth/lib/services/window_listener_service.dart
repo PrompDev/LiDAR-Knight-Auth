@@ -10,8 +10,10 @@ import 'package:win32/win32.dart';
 import 'package:window_manager/window_manager.dart';
 
 class WindowListenerService with WindowListener, TrayListener {
-  static const double initialWindowHeight = 1200.0;
-  static const double initialWindowWidth = 800.0;
+  static const double initialWindowHeight = 420.0;
+  static const double initialWindowWidth = 550.0;
+  static const double minimumWindowHeight = 360.0;
+  static const double minimumWindowWidth = 440.0;
   static const double menubarPopoverWidth = 380.0;
   static const double menubarPopoverHeight = 600.0;
   static const bool initialIsMaximized = false;
@@ -32,6 +34,14 @@ class WindowListenerService with WindowListener, TrayListener {
 
   Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
+    // One-time appearance migration only. Authentication/storage identity
+    // and accounts are untouched; later user-resized windows are remembered.
+    if (!(_preferences.getBool('lk_compact_window_v1') ?? false)) {
+      await _preferences.setDouble('windowWidth', initialWindowWidth);
+      await _preferences.setDouble('windowHeight', initialWindowHeight);
+      await _preferences.setBool('is_maximized', false);
+      await _preferences.setBool('lk_compact_window_v1', true);
+    }
     // Snapshot at launch: toggling the setting mid-session persists the pref
     // but must not reroute window behavior until restart, since the
     // startup-only window setup (title bar, size, activation policy) only
@@ -61,8 +71,8 @@ class WindowListenerService with WindowListener, TrayListener {
         _preferences.getDouble('windowWidth') ?? initialWindowWidth;
     final double windowHeight =
         _preferences.getDouble('windowHeight') ?? initialWindowHeight;
-    final w = windowWidth.clamp(200.0, maxWindowWidth);
-    final h = windowHeight.clamp(400.0, maxWindowHeight);
+    final w = windowWidth.clamp(minimumWindowWidth, maxWindowWidth);
+    final h = windowHeight.clamp(minimumWindowHeight, maxWindowHeight);
     return Size(w, h);
   }
 
@@ -279,7 +289,9 @@ class WindowListenerService with WindowListener, TrayListener {
       visibleOnFullScreen: false,
     );
     await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-    await windowManager.setMinimumSize(const Size(200, 400));
+    await windowManager.setMinimumSize(
+      const Size(minimumWindowWidth, minimumWindowHeight),
+    );
     await windowManager.setMaximumSize(
       const Size(maxWindowWidth, maxWindowHeight),
     );

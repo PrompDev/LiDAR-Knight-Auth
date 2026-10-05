@@ -132,6 +132,7 @@ Future<void> _startApp() async {
       );
       const windowOptions = WindowOptions(
         size: popoverSize,
+        backgroundColor: Colors.black,
         skipTaskbar: true,
         titleBarStyle: TitleBarStyle.hidden,
         windowButtonVisibility: false,
@@ -152,12 +153,15 @@ Future<void> _startApp() async {
     } else {
       WindowOptions windowOptions = WindowOptions(
         size: WindowListenerService.instance.getWindowSize(),
+        minimumSize: const Size(
+          WindowListenerService.minimumWindowWidth,
+          WindowListenerService.minimumWindowHeight,
+        ),
         maximumSize: const Size(8192, 8192),
         title: kAppDisplayName,
-        // See-through window: the app paints its own translucent veil and
-        // red dot haze (LkBackdrop). Where the platform cannot show a
-        // transparent window this falls back to the opaque black veil.
-        backgroundColor: Colors.transparent,
+        // Opaque black: the native LiDAR scene supplies atmosphere without
+        // desktop bleed-through reducing text contrast.
+        backgroundColor: Colors.black,
       );
       bool isMaximized = WindowListenerService.instance.getIsMaximized();
       await windowManager.waitUntilReadyToShow(windowOptions, () async {

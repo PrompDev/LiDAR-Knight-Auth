@@ -212,7 +212,7 @@ Future<String> _getAuthDataForExport() async {
   final allCodes = await CodeStore.instance.getAllCodes();
   String data = "";
   for (final code in allCodes) {
-    if (code.hasError) continue;
+    if (code.hasError || code.display.lidarLocked) continue;
     data +=
         "${code.rawData.replaceAll('algorithm=Algorithm.', 'algorithm=').replaceAll(',', '%2C')}\n";
   }

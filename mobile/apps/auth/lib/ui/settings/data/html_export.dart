@@ -48,6 +48,9 @@ Future<String> generateQRImageBase64(String data) async {
 }
 
 Future<String> generateOTPEntryHtml(Code code) async {
+  if (code.display.lidarLocked) {
+    throw StateError('Linked LiDAR keys cannot be exported.');
+  }
   // Capitalize algorithm for Google Authenticator compatibility in QR codes
   final qrData = code.rawData
       .replaceAll('algorithm=Algorithm.', 'algorithm=')
@@ -89,7 +92,7 @@ Future<String> generateHtml(BuildContext context) async {
   final List<String> enteries = [];
 
   for (final code in allCodes) {
-    if (code.hasError) continue;
+    if (code.hasError || code.display.lidarLocked) continue;
     final entry = await generateOTPEntryHtml(code);
     enteries.add(entry);
   }

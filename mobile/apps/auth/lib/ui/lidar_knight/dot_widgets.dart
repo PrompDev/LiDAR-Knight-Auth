@@ -6,10 +6,7 @@
 // LiDAR-Knight Auth fork of Ente Auth in 2026. See CHANGES-LIDAR-KNIGHT.md.
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:ente_auth/theme/lidar_knight_theme.dart';
 import 'package:flutter/material.dart';
@@ -472,16 +469,11 @@ class _LkEmblemPainter extends CustomPainter {
       oldDelegate.fillLevel != fillLevel;
 }
 
-/// The window backdrop: a translucent black veil (opaque on phones, which
-/// cannot show what is behind the app) with a red Bayer dither haze that
-/// shimmers twelve times a second.
-///
-/// It sits above every MaterialApp so pages with transparent scaffolds show
-/// it. The haze stays still when the system asks for reduced motion, and
-/// it stops while the app is in the background.
+/// Opaque black LiDAR scene: drifting mist, sparse scan points and a dark
+/// corridor silhouette. Information is rendered by the child in crisp text.
+/// Reduced-motion preferences and background lifecycle pause the animation.
 class LkBackdrop extends StatefulWidget {
   const LkBackdrop({super.key, required this.child});
-
   final Widget child;
 
   @override
@@ -489,10 +481,7 @@ class LkBackdrop extends StatefulWidget {
 }
 
 class _LkBackdropState extends State<LkBackdrop> with WidgetsBindingObserver {
-  static const Duration _frame = Duration(milliseconds: 83); // ~12 fps
-
   final ValueNotifier<int> _tick = ValueNotifier<int>(0);
-  final _LkHazeField _field = _LkHazeField();
   Timer? _timer;
 
   bool get _reduceMotion => WidgetsBinding
@@ -512,7 +501,10 @@ class _LkBackdropState extends State<LkBackdrop> with WidgetsBindingObserver {
     _timer?.cancel();
     _timer = null;
     if (_reduceMotion) return;
-    _timer = Timer.periodic(_frame, (_) => _tick.value = _tick.value + 1);
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 125),
+      (_) => _tick.value = _tick.value + 1,
+    );
   }
 
   void _stop() {
@@ -530,9 +522,7 @@ class _LkBackdropState extends State<LkBackdrop> with WidgetsBindingObserver {
   }
 
   @override
-  void didChangeAccessibilityFeatures() {
-    _start();
-  }
+  void didChangeAccessibilityFeatures() => _start();
 
   @override
   void dispose() {
@@ -543,106 +533,91 @@ class _LkBackdropState extends State<LkBackdrop> with WidgetsBindingObserver {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final bool isMobile = Platform.isAndroid || Platform.isIOS;
-    return CustomPaint(
-      painter: _LkHazePainter(
-        tick: _tick,
-        field: _field,
-        veil: isMobile ? LkColors.black : LkColors.veil,
-      ),
-      child: RepaintBoundary(child: widget.child),
-    );
-  }
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _LkScenePainter(tick: _tick),
+    child: RepaintBoundary(child: widget.child),
+  );
 }
 
-/// Caches the haze density per cell so a frame only re-thresholds it.
-class _LkHazeField {
-  static const double pitch = 3;
-  static const double dot = 2;
-
-  int _columns = 0;
-  int _rows = 0;
-  int _epoch = -1;
-  Uint8List _levels = Uint8List(0);
-  Float32List _points = Float32List(0);
-
-  void _rebuild(int columns, int rows, int epoch) {
-    _columns = columns;
-    _rows = rows;
-    _epoch = epoch;
-    _levels = Uint8List(columns * rows);
-    _points = Float32List(columns * rows * 2);
-    // Two slow patches near the lower-left and upper-right corners thicken
-    // the haze to 8/16. The middle, where the codes sit, stays at 2/16.
-    final drift = epoch * 0.15;
-    final ax = 0.12 + 0.05 * math.sin(drift);
-    final ay = 0.88 + 0.04 * math.cos(drift * 0.7);
-    final bx = 0.88 + 0.05 * math.cos(drift * 0.9);
-    final by = 0.12 + 0.04 * math.sin(drift * 1.3);
-    for (int y = 0; y < rows; y++) {
-      final ny = rows <= 1 ? 0.0 : y / (rows - 1);
-      for (int x = 0; x < columns; x++) {
-        final nx = columns <= 1 ? 0.0 : x / (columns - 1);
-        final da = math.sqrt((nx - ax) * (nx - ax) + (ny - ay) * (ny - ay));
-        final db = math.sqrt((nx - bx) * (nx - bx) + (ny - by) * (ny - by));
-        final boost =
-            6 * math.max(0.0, 1 - da / 0.45) + 6 * math.max(0.0, 1 - db / 0.45);
-        _levels[y * columns + x] = math.min(8, (2 + boost).round());
-      }
-    }
-  }
-
-  /// Returns the centres of the lit dots for this frame.
-  Float32List pointsFor(Size size, int tick, int ox, int oy) {
-    final columns = (size.width / pitch).ceil();
-    final rows = (size.height / pitch).ceil();
-    // The patches move every two seconds (24 frames).
-    final epoch = tick ~/ 24;
-    if (columns != _columns || rows != _rows || epoch != _epoch) {
-      _rebuild(columns, rows, epoch);
-    }
-    int n = 0;
-    for (int y = 0; y < rows; y++) {
-      final bayerRow = kLkBayer4[(y + oy) & 3];
-      for (int x = 0; x < columns; x++) {
-        if (_levels[y * columns + x] > bayerRow[(x + ox) & 3]) {
-          _points[n++] = x * pitch + pitch / 2;
-          _points[n++] = y * pitch + pitch / 2;
-        }
-      }
-    }
-    return Float32List.sublistView(_points, 0, n);
-  }
-}
-
-class _LkHazePainter extends CustomPainter {
-  _LkHazePainter({required this.tick, required this.field, required this.veil})
-    : super(repaint: tick);
-
+class _LkScenePainter extends CustomPainter {
+  _LkScenePainter({required this.tick}) : super(repaint: tick);
   final ValueNotifier<int> tick;
-  final _LkHazeField field;
-  final Color veil;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = veil);
-    final frame = tick.value;
-    // A new random Bayer offset every frame makes the haze shimmer.
-    final random = math.Random(frame);
-    final ox = frame == 0 ? 0 : random.nextInt(4);
-    final oy = frame == 0 ? 0 : random.nextInt(4);
-    final points = field.pointsFor(size, frame, ox, oy);
-    if (points.isEmpty) return;
-    final paint = Paint()
-      ..color = LkColors.redDim
-      ..strokeWidth = _LkHazeField.dot
-      ..strokeCap = StrokeCap.butt
-      ..isAntiAlias = false;
-    canvas.drawRawPoints(ui.PointMode.points, points, paint);
+    final bounds = Offset.zero & size;
+    canvas.drawRect(bounds, Paint()..color = LkColors.black);
+    if (size.isEmpty) return;
+    final phase = tick.value / 80.0;
+    final glow = Offset(
+      size.width * (0.78 + 0.03 * math.sin(phase)),
+      size.height * (0.58 + 0.05 * math.cos(phase * 0.7)),
+    );
+    canvas.drawRect(
+      bounds,
+      Paint()
+        ..shader =
+            RadialGradient(
+              colors: const [
+                Color(0x1AFF2A12),
+                Color(0x060D141C),
+                Colors.transparent,
+              ],
+              stops: const [0, 0.55, 1],
+            ).createShader(
+              Rect.fromCircle(center: glow, radius: size.width * 0.65),
+            ),
+    );
+
+    // A quiet, distant hall drawn as surveyed geometry rather than a noisy
+    // full-screen matrix. The central code panel always takes priority.
+    final vanishing = Offset(size.width * 0.76, size.height * 0.38);
+    final line = Paint()
+      ..color = const Color(0x267D2019)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7;
+    for (int i = 0; i < 6; i++) {
+      final depth = (i + 1) / 7;
+      final spread = size.width * depth * 0.52;
+      final top = vanishing.dy - size.height * depth * 0.30;
+      final bottom = vanishing.dy + size.height * depth * 0.60;
+      final hall = Path()
+        ..moveTo(vanishing.dx - spread, bottom)
+        ..lineTo(vanishing.dx - spread, top + spread * 0.32)
+        ..lineTo(vanishing.dx, top)
+        ..lineTo(vanishing.dx + spread, top + spread * 0.32)
+        ..lineTo(vanishing.dx + spread, bottom);
+      canvas.drawPath(hall, line);
+    }
+    for (int i = 0; i < 9; i++) {
+      final x = size.width * i / 8;
+      canvas.drawLine(vanishing, Offset(x, size.height), line);
+    }
+
+    // Sparse point cloud on the outer scene. No dots are used for labels,
+    // buttons or codes and no desktop content is visible underneath.
+    final random = math.Random(6238);
+    final point = Paint()..color = const Color(0x427D2019);
+    for (int i = 0; i < 90; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final centre = (x / size.width - 0.5).abs();
+      if (centre < 0.29 && y < size.height * 0.80) continue;
+      final drift = math.sin(phase + i * 0.17) * 1.5;
+      canvas.drawCircle(Offset(x, y + drift), i % 9 == 0 ? 1.1 : 0.55, point);
+    }
+    final scanY = size.height * ((tick.value % 480) / 480);
+    canvas.drawRect(
+      Rect.fromLTWH(0, scanY, size.width, 24),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.transparent, Color(0x087D2019), Colors.transparent],
+        ).createShader(Rect.fromLTWH(0, scanY, size.width, 24)),
+    );
   }
 
   @override
-  bool shouldRepaint(_LkHazePainter oldDelegate) =>
-      oldDelegate.veil != veil || oldDelegate.field != field;
+  bool shouldRepaint(_LkScenePainter oldDelegate) => oldDelegate.tick != tick;
 }

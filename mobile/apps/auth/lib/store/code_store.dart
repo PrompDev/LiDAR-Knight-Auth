@@ -8,6 +8,7 @@ import 'package:ente_auth/models/authenticator/entity_result.dart';
 import 'package:ente_auth/models/code.dart';
 import 'package:ente_auth/models/code_parse_error.dart';
 import 'package:ente_auth/services/authenticator_service.dart';
+import 'package:ente_auth/services/lidar_master_key.dart';
 import 'package:ente_auth/store/offline_authenticator_db.dart';
 import 'package:ente_events/event_bus.dart';
 import 'package:logging/logging.dart';
@@ -20,6 +21,17 @@ class CodeStore {
   late AuthenticatorService _authenticatorService;
   final Map<int, Code> _cacheCodes = {};
   final _logger = Logger("CodeStore");
+  Future<void> _writeTail = Future<void>.value();
+
+  Future<T> _serializeWrite<T>(Future<T> Function() action) {
+    final result = _writeTail.then((_) => action());
+    // A refused import must not prevent the next legitimate operation.
+    _writeTail = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return result;
+  }
 
   Future<void> init() async {
     _authenticatorService = AuthenticatorService.instance;
@@ -129,9 +141,45 @@ class CodeStore {
     bool shouldSync = true,
     AccountMode? accountMode,
     List<Code>? existingAllCodes,
+    LidarResetApproval? lidarResetApproval,
+    LidarMasterKey? lidarMasterKey,
+  }) => _serializeWrite(
+    () => _addCode(
+      code,
+      shouldSync: shouldSync,
+      accountMode: accountMode,
+      lidarResetApproval: lidarResetApproval,
+      lidarMasterKey: lidarMasterKey,
+    ),
+  );
+
+  Future<AddResult> _addCode(
+    Code code, {
+    required bool shouldSync,
+    AccountMode? accountMode,
+    LidarResetApproval? lidarResetApproval,
+    LidarMasterKey? lidarMasterKey,
   }) async {
-    final mode = accountMode ?? _authenticatorService.getAccountMode();
-    final allCodes = existingAllCodes ?? (await getAllCodes(accountMode: mode));
+    final mode = code.display.lidarLocked
+        ? AccountMode.offline
+        : accountMode ?? _authenticatorService.getAccountMode();
+    // Always re-read the target DB. Caller lists are presentation/performance
+    // hints, never permission evidence; IDs are scoped to their account mode.
+    final allCodes = await getAllCodes(accountMode: mode);
+    final offlineInventory = mode == AccountMode.offline
+        ? allCodes
+        : Configuration.instance.getOfflineSecretKey() == null
+        ? <Code>[]
+        : await getAllCodes(accountMode: AccountMode.offline);
+    LidarCredentialPolicy.checkStandard(code, offlineInventory);
+    LidarCredentialPolicy.checkWrite(
+      code,
+      allCodes,
+      approval: lidarResetApproval,
+      importKey: lidarMasterKey,
+    );
+    // Managed admin credentials never enter ordinary cloud synchronization.
+    if (code.display.lidarLocked) shouldSync = false;
     bool isExistingCode = false;
     bool hasSameCode = false;
 
@@ -171,11 +219,17 @@ class CodeStore {
     return result;
   }
 
-  Future<void> removeCode(Code code, {AccountMode? accountMode}) async {
-    final mode = accountMode ?? _authenticatorService.getAccountMode();
-    await _authenticatorService.deleteEntry(code.generatedID!, mode);
-    Bus.instance.fire(CodesUpdatedEvent());
-  }
+  Future<void> removeCode(Code code, {AccountMode? accountMode}) =>
+      _serializeWrite(() async {
+        final mode = accountMode ?? _authenticatorService.getAccountMode();
+        final persistent = (await getAllCodes(
+          accountMode: mode,
+        )).where((saved) => saved.generatedID == code.generatedID).firstOrNull;
+        LidarCredentialPolicy.checkRemove(code, persistent);
+        if (persistent == null) return;
+        await _authenticatorService.deleteEntry(persistent.generatedID!, mode);
+        Bus.instance.fire(CodesUpdatedEvent());
+      });
 
   bool _isOfflineImportRunning = false;
 
@@ -194,9 +248,14 @@ class CodeStore {
       }
       logger.info('start import');
 
-      List<Code> offlineCodes = (await CodeStore.instance.getAllCodes(
-        accountMode: AccountMode.offline,
-      )).where((element) => !element.hasError).toList();
+      List<Code> offlineCodes =
+          (await CodeStore.instance.getAllCodes(
+                accountMode: AccountMode.offline,
+              ))
+              .where(
+                (element) => !element.hasError && !element.display.lidarLocked,
+              )
+              .toList();
       if (offlineCodes.isEmpty) {
         return;
       }
@@ -250,6 +309,7 @@ class CodeStore {
     String data = "";
     for (final code in allCodes) {
       if (code.hasError) continue;
+      if (code.display.lidarLocked) continue;
       data += "${code.toOTPAuthUrlFormat()}\n";
     }
     return data;

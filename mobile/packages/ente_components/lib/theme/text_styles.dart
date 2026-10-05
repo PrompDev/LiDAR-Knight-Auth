@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 class TextStyles {
   const TextStyles._();
 
-  // LiDAR-Knight Auth: all component text is drawn in the Doto dot-matrix
-  // face (bundled in this package's fonts/, SIL OFL 1.1).
-  static const String fontFamily = 'Doto';
-  static const String outfitFontFamily = 'Doto';
+  // LiDAR-Knight Auth: local Inter for compact, legible security controls.
+  static const String fontFamily = 'Inter';
+  static const String outfitFontFamily = 'Inter';
   static const String fontPackage = 'ente_components';
 
   static const display1 = TextStyle(

@@ -13,6 +13,9 @@ class CodeDisplay {
   int position;
   String iconSrc;
   String iconID;
+  final String lidarSeat;
+  final bool lidarLocked;
+  final int lidarGeneration;
 
   CodeDisplay({
     this.pinned = false,
@@ -24,6 +27,9 @@ class CodeDisplay {
     this.position = 0,
     this.iconSrc = '',
     this.iconID = '',
+    this.lidarSeat = '',
+    this.lidarLocked = false,
+    this.lidarGeneration = 0,
   });
 
   bool get isCustomIcon => (iconSrc != '' && iconID != '');
@@ -38,6 +44,9 @@ class CodeDisplay {
     int? position,
     String? iconSrc,
     String? iconID,
+    String? lidarSeat,
+    bool? lidarLocked,
+    int? lidarGeneration,
   }) {
     final bool updatedPinned = pinned ?? this.pinned;
     final bool updatedTrashed = trashed ?? this.trashed;
@@ -59,6 +68,9 @@ class CodeDisplay {
       position: updatedPosition,
       iconSrc: updatedIconSrc,
       iconID: updatedIconID,
+      lidarSeat: lidarSeat ?? this.lidarSeat,
+      lidarLocked: lidarLocked ?? this.lidarLocked,
+      lidarGeneration: lidarGeneration ?? this.lidarGeneration,
     );
   }
 
@@ -76,6 +88,11 @@ class CodeDisplay {
       position: json['position'] ?? 0,
       iconSrc: json['iconSrc'] ?? 'ente',
       iconID: json['iconID'] ?? '',
+      lidarSeat: json['lidarSeat'] is String ? json['lidarSeat'] : '',
+      lidarLocked: json['lidarLocked'] == true,
+      lidarGeneration: json['lidarGeneration'] is int
+          ? json['lidarGeneration']
+          : 0,
     );
   }
 
@@ -120,6 +137,9 @@ class CodeDisplay {
       'position': position,
       'iconSrc': iconSrc,
       'iconID': iconID,
+      'lidarSeat': lidarSeat,
+      'lidarLocked': lidarLocked,
+      'lidarGeneration': lidarGeneration,
     };
   }
 
@@ -133,6 +153,9 @@ class CodeDisplay {
         other.lastUsedAt == lastUsedAt &&
         other.tapCount == tapCount &&
         other.note == note &&
+        other.lidarSeat == lidarSeat &&
+        other.lidarLocked == lidarLocked &&
+        other.lidarGeneration == lidarGeneration &&
         listEquals(other.tags, tags);
   }
 
@@ -143,6 +166,9 @@ class CodeDisplay {
         lastUsedAt.hashCode ^
         tapCount.hashCode ^
         note.hashCode ^
+        lidarSeat.hashCode ^
+        lidarLocked.hashCode ^
+        lidarGeneration.hashCode ^
         tags.hashCode;
   }
 }

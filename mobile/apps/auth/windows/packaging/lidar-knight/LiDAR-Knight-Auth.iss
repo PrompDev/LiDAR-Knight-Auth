@@ -7,12 +7,12 @@
 ; shortcuts, and "Launch" on the last page. The only click is Finish. Unsigned: SmartScreen shows "More info → Run anyway".
 ;
 ; Build (after `flutter build windows --release` in mobile/apps/auth):
-;   "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /DMyAppVersion=4.4.28 /DVcRedist="<VS>\VC\Redist\MSVC\<ver>\x64\Microsoft.VC143.CRT" LiDAR-Knight-Auth.iss
+;   "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /DMyAppVersion=4.4.29 /DVcRedist="<VS>\VC\Redist\MSVC\<ver>\x64\Microsoft.VC143.CRT" LiDAR-Knight-Auth.iss
 ; Output: mobile/apps/auth/build/installer/LiDAR-Knight-Auth-Setup.exe
 
 #define MyAppName "LiDAR-Knight Auth"
 #ifndef MyAppVersion
-  #define MyAppVersion "4.4.28"
+  #define MyAppVersion "4.4.29"
 #endif
 #define MyAppPublisher "PrompDev"
 #define MyAppURL "https://github.com/PrompDev/LiDAR-Knight-Auth"

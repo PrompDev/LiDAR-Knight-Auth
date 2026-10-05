@@ -4,15 +4,15 @@ import 'package:ente_auth/theme/lidar_knight_theme.dart';
 import 'package:ente_components/ente_components.dart' as components;
 import 'package:flutter/material.dart';
 
-// LiDAR-Knight Auth: the app is dark-only and drawn in red dots. The light
+// LiDAR-Knight Auth: the app is dark-only with readable military-style text. The light
 // theme is the same object as the dark theme, so the system or in-app theme
 // setting can never switch to Ente's light (white and purple) look.
 final lightThemeData = darkThemeData;
 
-TextStyle _lkText(double size, {FontWeight weight = FontWeight.w800}) =>
+TextStyle _lkText(double size, {FontWeight weight = FontWeight.w500}) =>
     TextStyle(
       fontFamily: kLkFontFamily,
-      color: LkColors.red,
+      color: LkColors.text,
       fontSize: size,
       fontWeight: weight,
     );
@@ -29,13 +29,13 @@ final darkThemeData = ThemeData(
     opacity: 1.0,
     size: 50.0,
   ),
-  hintColor: LkColors.redFaint,
+  hintColor: LkColors.textFaint,
   buttonTheme: const ButtonThemeData().copyWith(
     buttonColor: LkColors.red,
     height: 56,
   ),
-  textTheme: _buildTextTheme(LkColors.red),
-  primaryTextTheme: _buildTextTheme(LkColors.red),
+  textTheme: _buildTextTheme(LkColors.text),
+  primaryTextTheme: _buildTextTheme(LkColors.text),
   outlinedButtonTheme: buildOutlinedButtonThemeData(
     bgDisabled: LkColors.redDim,
     bgEnabled: LkColors.red,
@@ -49,19 +49,20 @@ final darkThemeData = ThemeData(
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
       foregroundColor: LkColors.red,
-      textStyle: _lkText(14),
+      textStyle: _lkText(14, weight: FontWeight.w600),
     ),
   ),
-  // Translucent: pages show the dot haze painted by LkBackdrop behind them.
+  // The root painter is opaque black; transparent page canvases reveal its
+  // quiet LiDAR scene, never the user's desktop.
   scaffoldBackgroundColor: Colors.transparent,
   canvasColor: LkColors.dialog,
   appBarTheme: const AppBarTheme().copyWith(
     backgroundColor: Colors.transparent,
-    foregroundColor: LkColors.red,
+    foregroundColor: LkColors.text,
     surfaceTintColor: Colors.transparent,
     iconTheme: const IconThemeData(color: LkColors.red),
     actionsIconTheme: const IconThemeData(color: LkColors.red),
-    titleTextStyle: _lkText(18, weight: FontWeight.w900),
+    titleTextStyle: _lkText(16, weight: FontWeight.w700),
     elevation: 0,
   ),
   drawerTheme: const DrawerThemeData(
@@ -77,10 +78,12 @@ final darkThemeData = ThemeData(
   dialogTheme: const DialogThemeData().copyWith(
     backgroundColor: LkColors.dialog,
     surfaceTintColor: Colors.transparent,
-    titleTextStyle: _lkText(22, weight: FontWeight.w900),
+    titleTextStyle: _lkText(20, weight: FontWeight.w700),
     contentTextStyle: _lkText(16),
-    // A solid red rule along the edge.
-    shape: const RoundedRectangleBorder(side: BorderSide(color: LkColors.red)),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(8)),
+      side: BorderSide(color: LkColors.redOutline),
+    ),
   ),
   popupMenuTheme: PopupMenuThemeData(
     color: LkColors.toast,
@@ -176,14 +179,14 @@ final darkThemeData = ThemeData(
         error: LkColors.cream,
         onError: LkColors.black,
         surface: LkColors.row,
-        onSurface: LkColors.red,
+        onSurface: LkColors.text,
       ).copyWith(
         surfaceContainerLowest: LkColors.veil,
         surfaceContainerLow: LkColors.row,
         surfaceContainer: LkColors.row,
         surfaceContainerHigh: LkColors.dialog,
         surfaceContainerHighest: LkColors.toast,
-        onSurfaceVariant: LkColors.redFaint,
+        onSurfaceVariant: LkColors.textMuted,
         outline: LkColors.redOutline,
         outlineVariant: LkColors.redSoft,
       ),
@@ -196,11 +199,10 @@ final darkThemeData = ThemeData(
 );
 
 TextTheme _buildTextTheme(Color textColor) {
-  // Doto is a dot-matrix face. Its default instance is square dots at the
-  // heaviest weight; heavy weights keep the dots from turning into specks.
+  // Security information uses solid glyphs and stable contrast.
   TextStyle style(
     double size, {
-    FontWeight weight = FontWeight.w800,
+    FontWeight weight = FontWeight.w500,
     double alpha = 1,
   }) => TextStyle(
     color: alpha == 1 ? textColor : textColor.withValues(alpha: alpha),
@@ -210,19 +212,19 @@ TextTheme _buildTextTheme(Color textColor) {
   );
 
   return TextTheme(
-    displayLarge: style(48, weight: FontWeight.w900),
-    displayMedium: style(40, weight: FontWeight.w900),
-    displaySmall: style(34, weight: FontWeight.w900),
-    headlineLarge: style(32, weight: FontWeight.w900),
-    headlineMedium: style(32, weight: FontWeight.w900),
-    headlineSmall: style(24, weight: FontWeight.w900),
-    titleLarge: style(18, weight: FontWeight.w900),
+    displayLarge: style(40, weight: FontWeight.w700),
+    displayMedium: style(34, weight: FontWeight.w700),
+    displaySmall: style(28, weight: FontWeight.w700),
+    headlineLarge: style(26, weight: FontWeight.w700),
+    headlineMedium: style(24, weight: FontWeight.w700),
+    headlineSmall: style(20, weight: FontWeight.w700),
+    titleLarge: style(18, weight: FontWeight.w700),
     titleMedium: style(16),
     titleSmall: style(14),
     bodyLarge: style(16),
     bodyMedium: style(14),
-    bodySmall: style(12, alpha: 0.7),
-    labelLarge: style(14, weight: FontWeight.w900),
+    bodySmall: style(12, alpha: 0.8),
+    labelLarge: style(14, weight: FontWeight.w600),
     labelMedium: style(13),
     labelSmall: style(14).copyWith(decoration: TextDecoration.underline),
   );
@@ -282,7 +284,7 @@ extension CustomColorScheme on ColorScheme {
 
   Color get iconColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.75)
-      : LkColors.red;
+      : LkColors.text;
 
   Color get bgColorForQuestions => brightness == Brightness.light
       ? const Color.fromRGBO(255, 255, 255, 1)
@@ -320,7 +322,7 @@ extension CustomColorScheme on ColorScheme {
 
   Color get galleryThumbDrawColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.8)
-      : LkColors.redFaint;
+      : LkColors.textFaint;
 
   Color get backupEnabledBgColor => brightness == Brightness.light
       ? const Color.fromRGBO(230, 230, 230, 0.95)
@@ -344,7 +346,7 @@ extension CustomColorScheme on ColorScheme {
 
   Color get subTextColor => brightness == Brightness.light
       ? const Color.fromRGBO(180, 180, 180, 1)
-      : LkColors.redFaint;
+      : LkColors.textFaint;
 
   Color get themeSwitchInactiveIconColor => brightness == Brightness.light
       ? const Color.fromRGBO(0, 0, 0, 1).withValues(alpha: 0.5)
@@ -386,14 +388,14 @@ OutlinedButtonThemeData buildOutlinedButtonThemeData({
     style:
         OutlinedButton.styleFrom(
           shape: const RoundedRectangleBorder(),
-          fixedSize: const Size.fromHeight(56),
+          minimumSize: const Size(0, 42),
           alignment: Alignment.center,
-          padding: const EdgeInsets.fromLTRB(50, 16, 50, 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           textStyle: const TextStyle(
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w600,
             fontFamily: kLkFontFamily,
-            fontSize: 18,
-            letterSpacing: 1.5,
+            fontSize: 14,
+            letterSpacing: 0.4,
           ),
         ).copyWith(
           backgroundColor: WidgetStateProperty.resolveWith<Color>((
@@ -429,10 +431,10 @@ ElevatedButtonThemeData buildElevatedButtonThemeData({
       elevation: elevation,
       alignment: Alignment.center,
       textStyle: const TextStyle(
-        fontWeight: FontWeight.w900,
+        fontWeight: FontWeight.w600,
         fontFamily: kLkFontFamily,
-        fontSize: 18,
-        letterSpacing: 1.5,
+        fontSize: 14,
+        letterSpacing: 0.4,
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
       shape: const RoundedRectangleBorder(),

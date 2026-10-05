@@ -1,11 +1,10 @@
 import 'package:ente_auth/theme/colors.dart';
 import 'package:flutter/material.dart';
 
-// LiDAR-Knight Auth: every letter is drawn in Doto, a square-dot matrix
-// face (SIL OFL). Heavy weights keep thin dots from turning into specks.
-const FontWeight _regularWeight = FontWeight.w800;
-const FontWeight _boldWeight = FontWeight.w900;
-const String _fontFamily = 'Doto';
+// Bundled, crisp text for the compact Auth interface.
+const FontWeight _regularWeight = FontWeight.w500;
+const FontWeight _boldWeight = FontWeight.w700;
+const String _fontFamily = 'Inter';
 
 const TextStyle h1 = TextStyle(
   fontSize: 48,

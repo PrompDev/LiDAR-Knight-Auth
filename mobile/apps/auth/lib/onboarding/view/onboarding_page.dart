@@ -17,7 +17,7 @@ import 'package:ente_auth/ui/account/logout_dialog.dart';
 import 'package:ente_auth/ui/components/dialog_widget.dart';
 import 'package:ente_auth/ui/home/widgets/rounded_action_buttons.dart';
 import 'package:ente_auth/ui/home_page.dart';
-import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
+import 'package:ente_auth/ui/home/widgets/auth_logo_widget.dart';
 import 'package:ente_auth/ui/settings/developer_settings_widget.dart';
 import 'package:ente_auth/ui/settings/language_picker.dart';
 import 'package:ente_auth/utils/debug_build_flags.dart';
@@ -99,13 +99,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final l10n = context.strings;
 
     return Scaffold(
-      // LiDAR-Knight Auth: see-through, so the red dot haze shows behind.
+      // The root scene is opaque black; the compact welcome stays readable.
       backgroundColor: Colors.transparent,
       appBar: AppBar(
+        toolbarHeight: 44,
         leading: const SizedBox(),
         title: const FittedBox(
           fit: BoxFit.scaleDown,
-          child: LkDotText('LiDAR-Knight Auth', pitch: 3),
+          child: AuthLogoWidget(height: 14),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -149,66 +150,52 @@ class _OnboardingPageState extends State<OnboardingPage> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    const SizedBox(height: 28),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildFeatureSlider(context),
-                          const SizedBox(height: 12),
-                          _buildDotsIndicator(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 580),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 28),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildFeatureSlider(context),
+                        const SizedBox(height: 4),
+                        _buildDotsIndicator(),
+                        const SizedBox(height: 12),
+                        // Offline authentication is unchanged; optional Ente
+                        // backups remain a distinct choice below it.
+                        RoundedButton(
+                          label: l10n.useOffline,
+                          onPressed: _optForOfflineMode,
+                          type: RoundedButtonType.primary,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
                           children: [
-                            // LiDAR-Knight Auth is offline-first: codes stay
-                            // on this device unless you choose an account.
-                            RoundedButton(
-                              label: l10n.useOffline,
-                              onPressed: _optForOfflineMode,
-                              type: RoundedButtonType.primary,
+                            Expanded(
+                              child: RoundedButton(
+                                label: l10n.signUp,
+                                onPressed: _navigateToSignUpPage,
+                                type: RoundedButtonType.secondaryInverse,
+                              ),
                             ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: RoundedButton(
-                                    label: l10n.signUp,
-                                    onPressed: _navigateToSignUpPage,
-                                    type: RoundedButtonType.secondaryInverse,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: RoundedButton(
-                                    label: l10n.logInLabel,
-                                    onPressed: _navigateToSignInPage,
-                                    type: RoundedButtonType.secondaryInverse,
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: RoundedButton(
+                                label: l10n.logInLabel,
+                                onPressed: _navigateToSignInPage,
+                                type: RoundedButtonType.secondaryInverse,
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        const DeveloperSettingsWidget(),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    const DeveloperSettingsWidget(),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -391,7 +378,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final shouldApplyFade = screenWidth >= 800;
 
     final pageView = SizedBox(
-      height: 320,
+      height: 144,
       child: PageView.builder(
         controller: _pageController,
         itemBuilder: (context, index) {
@@ -524,23 +511,23 @@ class _FeatureItemWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The owner's AUTH emblem remains transparent over the red dot haze.
+        // The exact owner's AUTH emblem stays clear on the dark scene.
         Center(
           child: Image.asset(
             'assets/icons/lidar-knight-auth.png',
-            width: 188,
-            height: 188,
+            width: 88,
+            height: 88,
             fit: BoxFit.contain,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             title,
             style: getEnteTextTheme(
               context,
-            ).largeBold.copyWith(color: LkColors.red),
+            ).smallBold.copyWith(color: LkColors.textMuted),
             textAlign: TextAlign.center,
           ),
         ),

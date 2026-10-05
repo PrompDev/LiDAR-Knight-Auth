@@ -14,7 +14,7 @@ enum LkStartupStage {
 extension on LkStartupStage {
   String get label => switch (this) {
     LkStartupStage.desktop => 'Preparing the window',
-    LkStartupStage.appearance => 'Loading the dot theme',
+    LkStartupStage.appearance => 'Loading the interface',
     LkStartupStage.storage => 'Opening secure local storage',
     LkStartupStage.network => 'Preparing connection settings',
     LkStartupStage.services => 'Starting the authenticator',
@@ -48,7 +48,7 @@ class LkStartupScreen extends StatelessWidget {
             child: Center(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(24),
                   child: ValueListenableBuilder<LkStartupState>(
                     valueListenable: state,
                     builder: (context, current, _) => Column(
@@ -56,13 +56,21 @@ class LkStartupScreen extends StatelessWidget {
                       children: [
                         Image.asset(
                           'assets/icons/lidar-knight-auth.png',
-                          width: 160,
-                          height: 160,
+                          width: 80,
+                          height: 80,
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         const FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: LkDotText('LiDAR-Knight Auth', pitch: 2.5),
+                          child: Text(
+                            'LiDAR KNIGHT / AUTH',
+                            style: TextStyle(
+                              color: LkColors.text,
+                              fontSize: 16,
+                              letterSpacing: 1.2,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 24),
                         if (!current.failed)
@@ -80,8 +88,8 @@ class LkStartupScreen extends StatelessWidget {
                               : current.stage.label,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: LkColors.red,
-                            fontSize: 18,
+                            color: LkColors.text,
+                            fontSize: 14,
                           ),
                         ),
                         if (current.failed) ...[

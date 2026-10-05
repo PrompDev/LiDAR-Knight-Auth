@@ -186,9 +186,9 @@ const Color backgroundBaseLight = Color.fromRGBO(255, 255, 255, 1);
 const Color backgroundElevatedLight = Color.fromRGBO(255, 255, 255, 1);
 const Color backgroundElevated2Light = Color.fromRGBO(251, 251, 251, 1);
 
-const Color backgroundBaseDark = Color(0x8C000000);
-const Color backgroundElevatedDark = Color(0xC7000000);
-const Color backgroundElevated2Dark = Color(0xDB000000);
+const Color backgroundBaseDark = Color(0xFF000000);
+const Color backgroundElevatedDark = Color(0xFF101216);
+const Color backgroundElevated2Dark = Color(0xFF15171B);
 
 const Color backdropBaseLight = Color.fromRGBO(255, 255, 255, 0.92);
 const Color backdropMutedLight = Color.fromRGBO(255, 255, 255, 0.75);
@@ -202,9 +202,9 @@ const Color textBaseLight = Color.fromRGBO(0, 0, 0, 1);
 const Color textMutedLight = Color.fromRGBO(0, 0, 0, 0.6);
 const Color textFaintLight = Color.fromRGBO(0, 0, 0, 0.5);
 
-const Color textBaseDark = Color(0xFFFF2A12);
-const Color textMutedDark = Color(0xD9FF2A12);
-const Color textFaintDark = Color(0xB3FF2A12);
+const Color textBaseDark = Color(0xFFF2F1EA);
+const Color textMutedDark = Color(0xFFB8BBC0);
+const Color textFaintDark = Color(0xFF969BA3);
 
 const Color fillBaseLight = Color.fromRGBO(0, 0, 0, 1);
 const Color fillBasePressedLight = Color.fromRGBO(0, 0, 0, 0.87);
