@@ -193,11 +193,7 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
       case LidarImportPlan.activateFirst:
         if (mounted) setState(() => _setup = _LidarSetup(candidate, previous!));
         _say(
-          'PENDING SETUP: press ACTIVATE. The ${key.seat} card changes only after admin.lidarknight.com activates this newer key.',
-        );
-      case LidarImportPlan.refusedNotNewer:
-        _say(
-          'This seat already holds a key. Only a newer key issued to the same email replaces it, after it activates.',
+          'PENDING SETUP: press ACTIVATE. The ${key.seat} card changes only after admin.lidarknight.com activates this key.',
         );
       case LidarImportPlan.refusedLocked:
         _say(
@@ -707,7 +703,7 @@ String lidarStateMessage(CodeDisplay display, {bool setup = false}) {
   switch (display.lidarState) {
     case 'pending':
       return setup
-          ? 'PENDING SETUP: this newer key replaces the $seat card only after admin.lidarknight.com activates it. Until then the $seat card stays as it is.'
+          ? 'PENDING SETUP: this key replaces the $seat card only after admin.lidarknight.com activates it. Until then the $seat card stays as it is.'
           : 'PENDING: saved on this device only, not activated and not signed in. ACTIVATE sends the current code to admin.lidarknight.com. Activate by ${lidarUtc(display.lidarActivateBy)}.';
     case 'refused':
       return setup

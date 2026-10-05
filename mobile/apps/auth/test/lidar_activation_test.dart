@@ -62,6 +62,30 @@ LidarHttpReply refusal(
   Map<String, Object>? more,
 ]) => LidarHttpReply(status, {'state': 'refused', 'reason': reason, ...?more});
 
+/// POST /api/owner/activation/status's answer.
+LidarHttpReply status(String state, {String seat = 'admin2', int gen = 4}) =>
+    LidarHttpReply(200, {
+      'state': state,
+      'seat': seat,
+      'generation': gen,
+      'activateBy': '2026-10-12T12:00:00Z',
+    });
+
+/// POST /api/owner/signin's 200 answer (code-only sign-in).
+LidarHttpReply signedIn({
+  String seat = 'admin2',
+  int gen = 4,
+  String kind = 'enrolled',
+  int protocol = 1,
+}) => LidarHttpReply(200, {
+  'seat': seat,
+  'name': 'CT',
+  'caps': ['admin'],
+  'pending': <String>[],
+  'expiresAt': 4102444800000,
+  'linkedCredential': {'protocol': protocol, 'kind': kind, 'generation': gen},
+});
+
 void main() {
   test(
     'success: the exact contract body to the pinned host, then ACTIVE',
@@ -100,53 +124,48 @@ void main() {
     },
   );
 
-  test(
-    'a 200 that does not match the card exactly is refused as tampered',
-    () async {
-      for (final body in <Map<String, Object>>[
-        {...activeReply.json as Map<String, Object>, 'seat': 'admin3'},
-        {
-          ...activeReply.json as Map<String, Object>,
-          'linkedCredential': {
-            'protocol': 1,
-            'kind': 'enrolled',
-            'generation': 5,
-          },
+  test('a 200 that does not match the card exactly changes nothing', () async {
+    for (final body in <Map<String, Object>>[
+      {...activeReply.json as Map<String, Object>, 'seat': 'admin3'},
+      {
+        ...activeReply.json as Map<String, Object>,
+        'linkedCredential': {
+          'protocol': 1,
+          'kind': 'enrolled',
+          'generation': 5,
         },
-        {
-          ...activeReply.json as Map<String, Object>,
-          'linkedCredential': {
-            'protocol': 1,
-            'kind': 'master',
-            'generation': 4,
-          },
+      },
+      {
+        ...activeReply.json as Map<String, Object>,
+        'linkedCredential': {'protocol': 1, 'kind': 'master', 'generation': 4},
+      },
+      {
+        ...activeReply.json as Map<String, Object>,
+        'linkedCredential': {
+          'protocol': 2,
+          'kind': 'enrolled',
+          'generation': 4,
         },
-        {
-          ...activeReply.json as Map<String, Object>,
-          'linkedCredential': {
-            'protocol': 2,
-            'kind': 'enrolled',
-            'generation': 4,
-          },
-        },
-        {...activeReply.json as Map<String, Object>, 'state': 'pending'},
-        {'state': 'active', 'seat': 'admin2'},
-      ]) {
-        final outcome = await FakePoster([
-          LidarHttpReply(200, body),
-        ]).service.activate(pendingCard());
-        expect(
-          [outcome.state, outcome.reason, outcome.isActive],
-          ['refused', 'tampered', false],
-          reason: jsonEncode(body),
-        );
-      }
-      final notJson = await FakePoster([
-        const LidarHttpReply(200, null),
+      },
+      {...activeReply.json as Map<String, Object>, 'state': 'pending'},
+      {'state': 'active', 'seat': 'admin2'},
+    ]) {
+      final outcome = await FakePoster([
+        LidarHttpReply(200, body),
       ]).service.activate(pendingCard());
-      expect([notJson.state, notJson.reason], ['refused', 'tampered']);
-    },
-  );
+      // Only the server's commitKey answers 200: a mismatch is outside the
+      // contract, so no refusal the server never sent is recorded.
+      expect(
+        [outcome.problem, outcome.state, outcome.reason, outcome.proof],
+        ['unexpected', '', '', null],
+        reason: jsonEncode(body),
+      );
+    }
+    final notJson = await FakePoster([
+      const LidarHttpReply(200, null),
+    ]).service.activate(pendingCard());
+    expect([notJson.problem, notJson.proof], ['unexpected', null]);
+  });
 
   test(
     'every refusal with its contract HTTP status maps to the card state',
@@ -234,38 +253,28 @@ void main() {
     expect([down.problem, down.state, down.proof], ['unreachable', '', null]);
   });
 
-  test(
-    'lost answer: replayed or already-active, then status settles it',
-    () async {
-      Future<LidarActivationOutcome> run(String reason, Object status) async {
-        final fake = FakePoster([refusal(409, reason), status]);
-        final outcome = await fake.service.activate(pendingCard());
-        if (fake.calls.length == 2) {
-          final (url, body) = fake.calls[1];
-          expect(
-            url.toString(),
-            'https://admin.lidarknight.com/api/owner/activation/status',
-          );
-          expect(body, {'activationId': activationId});
-        }
-        return outcome;
+  group('lost answer: replayed or already-active, then status settles it', () {
+    Future<(LidarActivationOutcome, FakePoster)> run(
+      String reason,
+      List<Object> then, [
+      Code? card,
+    ]) async {
+      final fake = FakePoster([refusal(409, reason), ...then]);
+      final outcome = await fake.service.activate(card ?? pendingCard());
+      if (fake.calls.length >= 2) {
+        final (url, body) = fake.calls[1];
+        expect(
+          url.toString(),
+          'https://admin.lidarknight.com/api/owner/activation/status',
+        );
+        expect(body, {'activationId': activationId});
       }
+      return (outcome, fake);
+    }
 
-      LidarHttpReply status(
-        String state, {
-        String seat = 'admin2',
-        int gen = 4,
-      }) => LidarHttpReply(200, {
-        'state': state,
-        'seat': seat,
-        'generation': gen,
-        'activateBy': '2026-10-12T12:00:00Z',
-      });
-
+    test('both: never active without status at the file\'s own seat and '
+        'generation; ended states are recorded', () async {
       for (final reason in ['replayed', 'already-active']) {
-        final ok = await run(reason, status('active'));
-        expect([ok.state, ok.isActive], ['active', true], reason: reason);
-        // Never active without the status at the file's own generation.
         for (final other in [
           status('active', gen: 5),
           status('active', seat: 'admin3'),
@@ -278,21 +287,148 @@ void main() {
           }),
           const SocketException('synthetic offline'),
         ]) {
-          final outcome = await run(reason, other);
+          final (outcome, fake) = await run(reason, [other]);
           expect(
             [outcome.state, outcome.reason, outcome.isActive],
             ['refused', reason, false],
             reason: '$reason / $other',
           );
+          expect(fake.calls.length, 2, reason: 'no sign-in without status');
         }
-        expect((await run(reason, status('revoked'))).state, 'revoked');
-        expect((await run(reason, status('reissued'))).state, 'reissued');
-        expect((await run(reason, status('expired'))).state, 'expired');
-        final failed = await run(reason, status('failed'));
+        expect((await run(reason, [status('revoked')])).$1.state, 'revoked');
+        expect((await run(reason, [status('reissued')])).$1.state, 'reissued');
+        expect((await run(reason, [status('expired')])).$1.state, 'expired');
+        final failed = (await run(reason, [status('failed')])).$1;
         expect([failed.state, failed.reason], ['failed', 'locked']);
       }
-    },
-  );
+    });
+
+    test('replayed: the server matched this very code, so status active '
+        'is enough', () async {
+      final (ok, fake) = await run('replayed', [status('active')]);
+      expect([ok.state, ok.isActive], ['active', true]);
+      expect(fake.calls.length, 2);
+    });
+
+    test('already-active: status active AND a fresh sign-in with this '
+        'card\'s code, seat and generation (review B)', () async {
+      final (ok, fake) = await run('already-active', [
+        status('active'),
+        signedIn(),
+      ]);
+      expect([ok.state, ok.isActive], ['active', true]);
+      expect(fake.calls.length, 3);
+      final (url, body) = fake.calls[2];
+      expect(url, LidarActivation.signinUrl);
+      expect(url.toString(), 'https://admin.lidarknight.com/api/owner/signin');
+      expect(body, {'code': '654321'});
+      expect(LidarActivation.pinned(url), true);
+      // Status alone, or any other sign-in answer: the refusal stands.
+      for (final other in <Object>[
+        const LidarHttpReply(401, {'error': 'bad-code'}),
+        const LidarHttpReply(401, {'error': 'ambiguous', 'retryAfter': 3}),
+        const LidarHttpReply(429, {'error': 'locked', 'retryAfter': 30}),
+        signedIn(seat: 'admin3'),
+        signedIn(gen: 5),
+        signedIn(gen: 3),
+        signedIn(kind: 'master'),
+        signedIn(protocol: 2),
+        const LidarHttpReply(200, {'seat': 'admin2', 'caps': <String>[]}),
+        const LidarHttpReply(200, null),
+        const SocketException('synthetic offline'),
+      ]) {
+        final (outcome, calls) = await run('already-active', [
+          status('active'),
+          other,
+        ]);
+        expect(
+          [outcome.state, outcome.reason, outcome.isActive],
+          ['refused', 'already-active', false],
+          reason: '$other',
+        );
+        expect(calls.calls.length, 3, reason: '$other');
+      }
+    });
+
+    test('review B: a forged secret with a leaked activation id never '
+        'becomes ACTIVE or replaces the seat card', () async {
+      // A file with the real activation id, seat, email and generation 5 of
+      // a key that is already active, but a secret chosen by someone else.
+      const forgedSecret = 'QWERTYUIOPASDFGHJKLZXCVBNM234567';
+      final forged = LidarMasterKey.parse(
+        utf8.encode(
+          exampleFile
+              .replaceAll(secret, forgedSecret)
+              .replaceFirst('GENERATION=4', 'GENERATION=5'),
+        ),
+      ).toCode();
+      // The stored card: the seat's older pending key (generation 4).
+      final stored = pendingCard();
+      // The server: already-active (the code does not match), status active
+      // at generation 5, and the sign-in refuses this card's code.
+      final (outcome, fake) = await run('already-active', [
+        status('active', gen: 5),
+        const LidarHttpReply(401, {'error': 'bad-code'}),
+      ], forged);
+      expect(fake.calls.length, 3);
+      expect(outcome.isActive, false);
+      expect([outcome.state, outcome.reason], ['refused', 'already-active']);
+      final asActive = Code(
+        forged.account,
+        forged.issuer,
+        forged.digits,
+        forged.period,
+        forged.secret,
+        forged.algorithm,
+        forged.type,
+        forged.counter,
+        forged.rawData,
+        generatedID: stored.generatedID,
+        display: forged.display.copyWith(lidarState: 'active'),
+      );
+      for (final candidate in [
+        asActive,
+        LidarActivation.withOutcome(forged, outcome)
+          ..generatedID = stored.generatedID,
+      ]) {
+        expect(
+          () => LidarCredentialPolicy.checkWrite(candidate, [
+            stored,
+          ], activation: outcome.proof),
+          throwsStateError,
+        );
+      }
+      // Imported on its own (no older card), the forged card stays PENDING or
+      // records the refusal; it never shows ACTIVE and its guidance.
+      final alone = Code(
+        forged.account,
+        forged.issuer,
+        forged.digits,
+        forged.period,
+        forged.secret,
+        forged.algorithm,
+        forged.type,
+        forged.counter,
+        forged.rawData,
+        generatedID: 9,
+        display: forged.display,
+      );
+      expect(
+        () => LidarCredentialPolicy.checkWrite(
+          LidarActivation.withOutcome(alone, outcome),
+          [alone],
+          activation: outcome.proof,
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => LidarCredentialPolicy.checkWrite(asActive..generatedID = 9, [
+          alone,
+        ], activation: outcome.proof),
+        throwsStateError,
+      );
+    });
+  });
 
   test(
     'host pinning: another ISSUER is refused locally, nothing is sent',
@@ -317,6 +453,7 @@ void main() {
       expect(fake.calls, isEmpty);
       expect(LidarActivation.pinned(LidarActivation.activateUrl), true);
       expect(LidarActivation.pinned(LidarActivation.statusUrl), true);
+      expect(LidarActivation.pinned(LidarActivation.signinUrl), true);
       for (final url in [
         'http://admin.lidarknight.com/api/owner/activate',
         'https://admin.lidarknight.com:8443/api/owner/activate',
@@ -325,7 +462,10 @@ void main() {
         'https://u:p@admin.lidarknight.com/api/owner/activate',
         'https://admin.lidarknight.com/api/owner/activate?x=1',
         'https://admin.lidarknight.com/api/owner/activate#x',
-        'https://admin.lidarknight.com/api/owner/signin',
+        'http://admin.lidarknight.com/api/owner/signin',
+        'https://admin.lidarknight.com/api/owner/signin?code=1',
+        'https://admin.lidarknight.com/api/owner/signout',
+        'https://admin.lidarknight.com/api/owner/me',
       ]) {
         expect(LidarActivation.pinned(Uri.parse(url)), false, reason: url);
       }

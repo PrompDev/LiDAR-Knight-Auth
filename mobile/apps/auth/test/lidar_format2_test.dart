@@ -6,6 +6,7 @@ import 'package:ente_auth/services/lidar_master_key.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'lidar_key_file_parity_cases.dart';
+import 'lidar_key_file_parity_extra.dart';
 
 // SYNTHETIC LOCAL TEST ONLY: public test secrets, never an owner's key.
 const s1 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -91,47 +92,134 @@ LidarHttpReply active(String seat, int generation) => LidarHttpReply(200, {
   },
 });
 
+/// Every row must get the reference verdict, error text and fields.
+void expectParity(List<ParityCase> cases) {
+  for (final c in cases) {
+    final bytes = base64.decode(c.b64);
+    if (c.format == 0) {
+      try {
+        LidarMasterKey.parse(bytes);
+        fail('${c.id}: the reference refuses it');
+      } on FormatException catch (error) {
+        expect(error.message, c.error, reason: c.id);
+        expect(error.source, isNull, reason: c.id);
+        for (final secret in [s1, s2, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP']) {
+          expect(error.toString(), isNot(contains(secret)), reason: c.id);
+        }
+        expect(error.toString(), isNot(contains('@')), reason: c.id);
+      }
+      continue;
+    }
+    final LidarMasterKey key;
+    try {
+      key = LidarMasterKey.parse(bytes);
+    } on FormatException catch (error) {
+      fail('${c.id}: the reference accepts it, Dart said ${error.message}');
+    }
+    expect(key.format, c.format, reason: c.id);
+    expect(key.seat, c.seat, reason: c.id);
+    expect(key.name, c.name, reason: c.id);
+    final code = key.toCode();
+    expect(code.secret, c.secret, reason: c.id);
+    expect(code.account, c.name, reason: c.id);
+    expect(key.toString(), isNot(contains(c.secret)), reason: c.id);
+    if (c.format == 2) {
+      expect(key.issuer, c.issuer, reason: c.id);
+      expect(key.email, c.email, reason: c.id);
+      expect(key.generation, c.generation, reason: c.id);
+      expect(key.issuedAt, c.issuedAt, reason: c.id);
+      expect(key.activateBy, c.activateBy, reason: c.id);
+      expect(code.display.lidarActivationId, c.activationId, reason: c.id);
+      // The card the file makes can be created from it (its label is NAME).
+      expect(
+        () => LidarCredentialPolicy.checkWrite(code, [], importKey: key),
+        returnsNormally,
+        reason: c.id,
+      );
+    }
+  }
+}
+
 void main() {
   group('parser parity with the server reference (key-file.js)', () {
     test('every synthetic file gets the reference verdict and fields', () {
       expect(parityCases.length, greaterThan(150));
-      for (final c in parityCases) {
-        final bytes = base64.decode(c.b64);
-        if (c.format == 0) {
-          try {
-            LidarMasterKey.parse(bytes);
-            fail('${c.id}: the reference refuses it');
-          } on FormatException catch (error) {
-            expect(error.message, c.error, reason: c.id);
-            expect(error.source, isNull, reason: c.id);
-            for (final secret in [s1, s2, 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP']) {
-              expect(error.toString(), isNot(contains(secret)), reason: c.id);
-            }
-            expect(error.toString(), isNot(contains('@')), reason: c.id);
-          }
-          continue;
-        }
-        final LidarMasterKey key;
-        try {
-          key = LidarMasterKey.parse(bytes);
-        } on FormatException catch (error) {
-          fail('${c.id}: the reference accepts it, Dart said ${error.message}');
-        }
-        expect(key.format, c.format, reason: c.id);
-        expect(key.seat, c.seat, reason: c.id);
-        expect(key.name, c.name, reason: c.id);
-        final code = key.toCode();
-        expect(code.secret, c.secret, reason: c.id);
-        expect(code.account, c.name, reason: c.id);
-        expect(key.toString(), isNot(contains(c.secret)), reason: c.id);
-        if (c.format == 2) {
-          expect(key.issuer, c.issuer, reason: c.id);
-          expect(key.email, c.email, reason: c.id);
-          expect(key.generation, c.generation, reason: c.id);
-          expect(key.issuedAt, c.issuedAt, reason: c.id);
-          expect(key.activateBy, c.activateBy, reason: c.id);
-          expect(code.display.lidarActivationId, c.activationId, reason: c.id);
-        }
+      expectParity(parityCases);
+    });
+
+    test('URI spellings, EMAIL letters and NAMEs the first table missed', () {
+      expect(parityCasesExtra.length, greaterThan(90));
+      expectParity(parityCasesExtra);
+      final verdicts = {for (final c in parityCasesExtra) c.id: c.format};
+      // The review's findings, as the reference judges them.
+      for (final (id, format) in [
+        ('v2 URI port 65536', 0),
+        ('v2 URI backslash after host', 0),
+        ('v2 URI backslashes after scheme', 0),
+        ('v2 URI raw BOM before label', 0),
+        ('v2 URI raw BOM before secret name', 0),
+        ('v2 URI %EF%BB%BF before secret value', 0),
+        ('v2 URI tab in host', 2),
+        ('v2 URI leading U+0001', 2),
+        ('v2 URI %E2%82 in another value', 2),
+        ('v2 NAME backslash, raw label', 2),
+        ('v2 EMAIL a+U+13A0', 0),
+        ('v2 EMAIL a+U+1E900', 0),
+        ('v2 EMAIL a+U+00E9', 2),
+      ]) {
+        expect(verdicts[id], format, reason: id);
+      }
+    });
+
+    test('EMAIL lower-case follows JavaScript, not Dart, toLowerCase', () {
+      bool lower(int cp) => LidarKeyContract.lowerCase(String.fromCharCode(cp));
+      for (var cp = 0; cp < 0x80; cp++) {
+        expect(lower(cp), !(cp >= 0x41 && cp <= 0x5A), reason: '$cp');
+      }
+      // Upper-case letters newer than Dart's tables (the review's examples).
+      for (final cp in [
+        0x037F, 0x0524, 0x10C7, 0x13A0, 0x13F5, 0x1C89, 0x1C90, 0x2C2F, //
+        0xA7C0, 0xA7D0, 0x10570, 0x10C80, 0x118A0, 0x16E40, 0x1E900,
+      ]) {
+        expect(lower(cp), false, reason: cp.toRadixString(16));
+      }
+      for (final cp in [0x00C0, 0x0130, 0x03A3, 0x1E9E, 0x10400]) {
+        expect(lower(cp), false, reason: cp.toRadixString(16));
+      }
+      // Lower-case letters and letters without a lower-case form.
+      for (final cp in [0x00E9, 0x00DF, 0x03C2, 0x0149, 0x2102, 0x13F8]) {
+        expect(lower(cp), true, reason: cp.toRadixString(16));
+      }
+      expect(LidarKeyContract.lowerCase('ct@example.com'), true);
+      expect(LidarKeyContract.lowerCase('a\u{1E922}@example.com'), true);
+      expect(LidarKeyContract.lowerCase('a\u{1E900}@example.com'), false);
+    });
+
+    test('format 1 keeps the Auth 4.4.29 URI rules, even where key-file.js '
+        'differs (the server reference must follow, not the app)', () {
+      String v1(String uri) =>
+          'SEAT=admin1\nNAME=LOCAL TEST\nTOTP_SECRET=$s1\nOTPAUTH_URI=$uri\n';
+      LidarMasterKey parse(String uri) =>
+          LidarMasterKey.parse(utf8.encode(v1(uri)));
+      // 4.4.29 accepts a port above 65535 (key-file.js refuses it) ...
+      expect(parse('otpauth://totp:65536/X?secret=$s1').format, 1);
+      expect(parse('otpauth://totp:99999/X?secret=$s1').format, 1);
+      // ... and refuses a tab in the host or a leading C0 control (key-file.js
+      // accepts both).
+      for (final uri in [
+        'otpauth://to\ttp/X?secret=$s1',
+        '\u0001otpauth://totp/X?secret=$s1',
+      ]) {
+        expect(
+          () => parse(uri),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              'Invalid LiDAR owner credential.',
+            ),
+          ),
+        );
       }
     });
 
@@ -188,6 +276,30 @@ void main() {
         '"lidarSeat":"admin2","lidarLocked":true,"lidarGeneration":0}',
       );
       expect(code.toOTPAuthUrlFormat(), isNot(contains('lidarFormat')));
+    });
+
+    test('the card label is always the NAME (canonical OTPAUTH_URI)', () {
+      for (final name in ['A\\B', 'A/./B', 'A/../B', 'X/.', '..', 'Q?#&=+ /']) {
+        final key = LidarMasterKey.parse(utf8.encode(v2File(name: name)));
+        final card = key.toCode();
+        expect(card.account, name);
+        expect(
+          card.rawData,
+          'otpauth://totp/LiDAR-Knight:${Uri.encodeComponent(name)}'
+          '?secret=$s1&issuer=LiDAR-Knight&algorithm=SHA1&digits=6&period=30',
+        );
+        // The import is not mistaken for a locked seat.
+        expect(
+          () => LidarCredentialPolicy.checkWrite(card, [], importKey: key),
+          returnsNormally,
+          reason: name,
+        );
+        // And the label survives encrypted-storage serialization.
+        final restored = Code.fromOTPAuthUrl(
+          jsonDecode(stored(card, 'pending').toOTPAuthUrlFormat()),
+        );
+        expect(restored.account, name);
+      }
     });
 
     test('planImport refuses a format-1 key (format 1 keeps its own flow)', () {
@@ -482,7 +594,7 @@ void main() {
       'revoked',
     ]) {
       test(
-        'a $state card: same seat, same email, higher generation, after 200',
+        'a $state card: replaced only by a key the server just proved',
         () async {
           final previous = stored(
             old.toCode(),
@@ -517,8 +629,12 @@ void main() {
             throwsStateError,
           );
           await expectReplace(previous, newer, allowed: true);
-          // Same generation, lower generation or another email: refused.
-          for (final bad in [
+          // The old card's EMAIL and GENERATION come from its own file, which
+          // the server may never have confirmed: another email (a corrected
+          // reissue), an equal or lower generation, or the same activation id
+          // with another secret never blocks a key the server proved (v2.4
+          // note). The server alone decides; until it does, nothing changes.
+          for (final other in [
             key2(generation: 4, activationId: id2, secret: s3),
             key2(generation: 3, activationId: id2, secret: s3),
             key2(
@@ -527,16 +643,156 @@ void main() {
               secret: s3,
               email: 'other@example.com',
             ),
+            key2(generation: 4, secret: s3),
           ]) {
             expect(
-              LidarCredentialPolicy.planImport(bad, previous),
-              LidarImportPlan.refusedNotNewer,
+              LidarCredentialPolicy.planImport(other, previous),
+              LidarImportPlan.activateFirst,
             );
-            await expectReplace(previous, bad, allowed: false);
+            final pendingSetup = other.toCode()
+              ..generatedID = previous.generatedID;
+            expect(
+              () => LidarCredentialPolicy.checkWrite(pendingSetup, [previous]),
+              throwsStateError,
+            );
+            await expectReplace(previous, other, allowed: true);
           }
         },
       );
     }
+
+    test('a proof replaces with its own key only', () async {
+      final previous = stored(old.toCode(), 'pending');
+      final newer = key2(generation: 5, activationId: id2, secret: s3);
+      final setup = newer.toCode();
+      final ok = await answer(setup, active('admin2', 5));
+      final activated = LidarActivation.withOutcome(setup, ok)
+        ..generatedID = previous.generatedID;
+      // The same proof cannot carry another email, deadline or label.
+      for (final changed in [
+        activated.copyWith(
+          display: activated.display.copyWith(lidarEmail: 'm@x.io'),
+        ),
+        activated.copyWith(
+          display: activated.display.copyWith(
+            lidarActivateBy: '2026-10-13T12:00:00Z',
+          ),
+        ),
+        activated.copyWith(account: 'Mallory'),
+      ]) {
+        changed.generatedID = previous.generatedID;
+        expect(
+          () => LidarCredentialPolicy.checkWrite(changed, [
+            previous,
+          ], activation: ok.proof),
+          throwsStateError,
+        );
+      }
+      expect(
+        () => LidarCredentialPolicy.checkWrite(activated, [
+          previous,
+        ], activation: ok.proof),
+        returnsNormally,
+      );
+    });
+
+    test(
+      'review A: a forged max-generation card never blocks the real key',
+      () async {
+        // A well-formed file nobody issued (another secret and activation id,
+        // the largest GENERATION) is saved as a locked PENDING card.
+        final forged = key2(
+          generation: 9007199254740991,
+          activationId: id2,
+          secret: s3,
+        );
+        final squat = stored(forged.toCode(), 'pending');
+        // ACTIVATE: the server does not know it.
+        final unknown = await answer(
+          squat,
+          const LidarHttpReply(404, {'state': 'refused', 'reason': 'unknown'}),
+        );
+        final refusedSquat = LidarActivation.withOutcome(squat, unknown)
+          ..generatedID = squat.generatedID;
+        LidarCredentialPolicy.checkWrite(refusedSquat, [
+          squat,
+        ], activation: unknown.proof);
+        expect(refusedSquat.display.lidarReason, 'unknown');
+        // The real key, generation 5, at the same seat (with the same or a
+        // different email) takes the seat once the server activated it.
+        for (final real in [
+          key2(generation: 5),
+          key2(generation: 5, email: 'owner@example.com'),
+        ]) {
+          for (final card in [squat, refusedSquat]) {
+            expect(
+              LidarCredentialPolicy.planImport(real, card),
+              LidarImportPlan.activateFirst,
+            );
+            await expectReplace(card, real, allowed: true);
+          }
+        }
+        // A format-1 setup file proved by a fresh sign-in may follow it too:
+        // the squatter's generation is no floor.
+        expect(LidarCredentialPolicy.replacementFloor(refusedSquat.display), 0);
+        final signin = {
+          'seat': 'admin2',
+          'caps': ['admin'],
+          'expiresAt': 2000,
+          'linkedCredential': {
+            'protocol': 1,
+            'kind': 'enrolled',
+            'generation': 5,
+          },
+        };
+        expect(
+          LidarResetApproval.validReply(
+            signin,
+            'admin2',
+            LidarCredentialPolicy.replacementFloor(refusedSquat.display),
+            1000,
+          ),
+          true,
+        );
+        // An active or format-1 card keeps its own generation as the floor.
+        expect(
+          LidarCredentialPolicy.replacementFloor(
+            stored(old.toCode(), 'active').display,
+          ),
+          4,
+        );
+        final master = LidarMasterKey.parse(utf8.encode(v1File())).toCode();
+        expect(LidarCredentialPolicy.replacementFloor(master.display), 0);
+        expect(
+          LidarCredentialPolicy.replacementFloor(
+            master.display.copyWith(lidarGeneration: 7),
+          ),
+          7,
+        );
+      },
+    );
+
+    test(
+      'review: a corrected-email reissue replaces the old card after 200',
+      () async {
+        // gen 4 was sent to ct@example.com; the inviting admin reissued gen 5
+        // to the corrected address (contract 3: reissueKey { seat, email }).
+        for (final state in ['pending', 'expired', 'failed', 'reissued']) {
+          final previous = stored(old.toCode(), state);
+          final corrected = key2(
+            generation: 5,
+            activationId: id2,
+            secret: s3,
+            email: 'corrected@example.com',
+          );
+          expect(
+            LidarCredentialPolicy.planImport(corrected, previous),
+            LidarImportPlan.activateFirst,
+          );
+          await expectReplace(previous, corrected, allowed: true);
+        }
+      },
+    );
 
     test(
       'an ACTIVE card: only the linked-credential rule (higher generation)',

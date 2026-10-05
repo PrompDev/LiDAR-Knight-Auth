@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:ente_auth/models/code.dart';
 import 'package:ente_auth/models/code_display.dart';
+import 'package:ente_auth/services/lidar_js_case.dart';
 import 'package:ente_auth/utils/totp_util.dart';
 import 'package:flutter/foundation.dart';
 
@@ -69,6 +70,21 @@ class LidarKeyContract {
   /// The server's validEmail.
   static bool validEmail(String email) =>
       email.length <= 254 && _emailRe.hasMatch(email);
+
+  /// JavaScript's toLowerCase leaves [text] as it is: the server's "EMAIL is
+  /// lower-case" rule. Dart's own toLowerCase uses older Unicode tables, so
+  /// the generated JavaScript table decides (lidar_js_case.dart).
+  static bool lowerCase(String text) => !text.runes.any(_jsUpper);
+
+  static bool _jsUpper(int cp) {
+    if (cp < 0x80) return cp >= 0x41 && cp <= 0x5A;
+    const runs = lidarJsLowerCaseRuns;
+    for (var i = 0; i < runs.length; i += 3) {
+      if (cp < runs[i]) return false;
+      if (cp <= runs[i + 1]) return (cp - runs[i]) % runs[i + 2] == 0;
+    }
+    return false;
+  }
 }
 
 /// Parses data only. Never evaluates dotenv, shell interpolation or URLs.
@@ -293,7 +309,7 @@ class LidarMasterKey {
     final secret = fields['TOTP_SECRET']!;
     if (!LidarKeyContract.seatRe.hasMatch(seat) ||
         !_nameOk(name) ||
-        email != email.toLowerCase() ||
+        !LidarKeyContract.lowerCase(email) ||
         !LidarKeyContract.validEmail(email) ||
         generation == null ||
         generation > LidarKeyContract.maxSafeInteger ||
@@ -320,49 +336,126 @@ class LidarMasterKey {
   }
 
   // As format 1, plus: the exact secret, issuer LiDAR-Knight when present and
-  // the decoded label exactly 'LiDAR-Knight:' + NAME.
-  static bool _uriV2Ok(String text, String secret, String name) {
+  // the decoded label exactly 'LiDAR-Knight:' + NAME. The server reads the URI
+  // with the WHATWG URL parser (key-file.js uriOk); Dart's Uri differs on some
+  // spellings, so each difference is reproduced here (contract v2.3: accept
+  // and refuse exactly what key-file.js does). Format 1 keeps 4.4.29's rules.
+  static bool _uriV2Ok(String raw, String secret, String name) {
+    // key-file.js rawUserInfo: any '@' after the first character of the raw
+    // authority is user info, whatever WHATWG later removes from it.
+    final authority = _authorityRe.firstMatch(raw)?.group(1) ?? '';
+    if (authority.lastIndexOf('@') > 0) return false;
+    // WHATWG URL drops C0 controls and spaces at both ends and every ASCII
+    // tab or newline. otpauth is not a special scheme, so a backslash is an
+    // ordinary character there (Dart's Uri reads it as '/').
+    final text = raw
+        .replaceAll(_c0EndsRe, '')
+        .replaceAll(_tabOrNewlineRe, '')
+        .replaceAll(r'\', '%5C');
     try {
       final uri = Uri.parse(text);
-      final query = uri.queryParameters;
       if (uri.scheme != 'otpauth' ||
           uri.host != 'totp' ||
+          uri.port > 65535 ||
           uri.fragment.isNotEmpty ||
-          uri.userInfo.isNotEmpty ||
-          uri.queryParametersAll.values.any((v) => v.length != 1) ||
-          query['secret'] != secret ||
-          (query['digits'] ?? '6') != '6' ||
-          (query['period'] ?? '30') != '30' ||
-          (query['algorithm'] ?? 'SHA1').toUpperCase() != 'SHA1') {
+          uri.userInfo.isNotEmpty) {
         return false;
       }
-      if (query.containsKey('issuer') && query['issuer'] != 'LiDAR-Knight') {
+      // URLSearchParams: '+' is a space, escapes decode leniently (U+FFFD)
+      // and a leading U+FEFF is kept.
+      final params = <(String, String)>[];
+      for (final part in uri.query.split('&')) {
+        if (part.isEmpty) continue;
+        final equals = part.indexOf('=');
+        String form(String s) =>
+            _percentDecode(s.replaceAll('+', ' '), strict: false);
+        params.add(
+          equals < 0
+              ? (form(part), '')
+              : (
+                  form(part.substring(0, equals)),
+                  form(part.substring(equals + 1)),
+                ),
+        );
+      }
+      final names = [for (final (key, _) in params) key];
+      if (names.toSet().length != names.length) return false;
+      String? param(String name) {
+        for (final (key, value) in params) {
+          if (key == name) return value;
+        }
+        return null;
+      }
+
+      final algorithm = param('algorithm');
+      if (param('secret') != secret ||
+          (param('digits') ?? '6') != '6' ||
+          (param('period') ?? '30') != '30' ||
+          // JavaScript's toUpperCase gives 'SHA1' for exactly these.
+          (algorithm != null && !_sha1Re.hasMatch(algorithm)) ||
+          (names.contains('issuer') && param('issuer') != 'LiDAR-Knight')) {
         return false;
       }
+      // decodeURIComponent: strict escapes and UTF-8, a leading U+FEFF kept.
       final path = uri.path.isEmpty ? '' : uri.path.substring(1);
-      return Uri.decodeComponent(path) == 'LiDAR-Knight:$name';
+      return _percentDecode(path, strict: true) == 'LiDAR-Knight:$name';
     } catch (_) {
       return false;
     }
   }
 
-  Code toCode() => Code.fromOTPAuthUrl(
-    Uri(
-      scheme: 'otpauth',
-      host: 'totp',
-      path: '/LiDAR-Knight:$name',
-      queryParameters: {
-        'secret': _secret,
-        'issuer': 'LiDAR-Knight',
-        'algorithm': 'SHA1',
-        'digits': '6',
-        'period': '30',
-      },
-    ).toString(),
-    display: format == 2
-        // A format-2 import is a locked PENDING card: it shows codes (needed
-        // to activate) but is never reported as a server sign-in.
-        ? CodeDisplay(
+  static final _authorityRe = RegExp(r'^[A-Za-z][A-Za-z0-9+.-]*://([^/?#]*)');
+  static final _c0EndsRe = RegExp(r'^[\u0000-\u0020]+|[\u0000-\u0020]+$');
+  static final _tabOrNewlineRe = RegExp('[\t\n\r]');
+  static final _sha1Re = RegExp('^[sS\u017F][hH][aA]1\$');
+  static final _hexPairRe = RegExp(r'^[0-9A-Fa-f]{2}$');
+
+  /// Percent-decodes [text] as UTF-8. strict: decodeURIComponent (a malformed
+  /// escape or UTF-8 throws); otherwise WHATWG percent-decode and UTF-8 decode
+  /// with replacement. Either way a leading U+FEFF is kept, as in JavaScript.
+  static String _percentDecode(String text, {required bool strict}) {
+    final bytes = <int>[];
+    for (var i = 0; i < text.length; i++) {
+      final unit = text.codeUnitAt(i);
+      if (unit == 0x25) {
+        if (i + 2 < text.length &&
+            _hexPairRe.hasMatch(text.substring(i + 1, i + 3))) {
+          bytes.add(int.parse(text.substring(i + 1, i + 3), radix: 16));
+          i += 2;
+          continue;
+        }
+        if (strict) throw const FormatException('Invalid escape.');
+      }
+      final end = (unit & 0xFC00) == 0xD800 && i + 1 < text.length
+          ? i + 2
+          : i + 1;
+      bytes.addAll(utf8.encode(text.substring(i, end)));
+      i = end - 1;
+    }
+    final out = StringBuffer();
+    var start = 0;
+    // Dart's UTF-8 decoder drops a leading byte order mark; JavaScript keeps it.
+    while (start + 2 < bytes.length &&
+        bytes[start] == 0xEF &&
+        bytes[start + 1] == 0xBB &&
+        bytes[start + 2] == 0xBF) {
+      out.write('\uFEFF');
+      start += 3;
+    }
+    out.write(utf8.decode(bytes.sublist(start), allowMalformed: !strict));
+    return out.toString();
+  }
+
+  /// A format-2 card is stored with the server's canonical OTPAUTH_URI
+  /// (key-file.js keyOtpauthUri: the NAME as one encoded label), so its account
+  /// is always NAME, whatever '/', '\' or '.' the NAME holds.
+  Code toCode() => format == 2
+      ? Code.fromOTPAuthUrl(
+          'otpauth://totp/LiDAR-Knight:${Uri.encodeComponent(name)}'
+          '?secret=$_secret&issuer=LiDAR-Knight&algorithm=SHA1&digits=6&period=30',
+          // A format-2 import is a locked PENDING card: it shows codes (needed
+          // to activate) but is never reported as a server sign-in.
+          display: CodeDisplay(
             lidarSeat: seat,
             lidarLocked: true,
             pinned: true,
@@ -373,9 +466,41 @@ class LidarMasterKey {
             lidarActivationId: _activationId,
             lidarState: 'pending',
             lidarActivateBy: activateBy,
-          )
-        : CodeDisplay(lidarSeat: seat, lidarLocked: true, pinned: true),
-  );
+          ),
+        )
+      // Format 1: exactly as Auth 4.4.29.
+      : Code.fromOTPAuthUrl(
+          Uri(
+            scheme: 'otpauth',
+            host: 'totp',
+            path: '/LiDAR-Knight:$name',
+            queryParameters: {
+              'secret': _secret,
+              'issuer': 'LiDAR-Knight',
+              'algorithm': 'SHA1',
+              'digits': '6',
+              'period': '30',
+            },
+          ).toString(),
+          display: CodeDisplay(
+            lidarSeat: seat,
+            lidarLocked: true,
+            pinned: true,
+          ),
+        );
+
+  /// This parsed file is exactly the key [card] holds (same secret and the
+  /// same format-2 fields).
+  bool _isCard(Code card) {
+    final d = card.display;
+    return card.secret == _secret &&
+        d.lidarFormat == format &&
+        d.lidarSeat == seat &&
+        d.lidarIssuer == issuer &&
+        d.lidarEmail == email &&
+        d.lidarGeneration == generation &&
+        d.lidarActivationId == _activationId;
+  }
 
   // The only initial-creation capability comes from the bounded ENV parser.
   // JSON display flags and a caller-provided generation are not authority.
@@ -420,13 +545,10 @@ enum LidarImportPlan {
   /// The same key is already on this device.
   alreadyLinked,
 
-  /// A transient PENDING SETUP: the new key replaces the card only after it
-  /// activates (200 active at its own generation). Until then nothing changes.
+  /// A transient PENDING SETUP: the new key replaces the card only after the
+  /// server proved it (its own activation answered active at its own
+  /// generation). Until then nothing changes.
   activateFirst,
-
-  /// A pending, refused, expired, failed, reissued or revoked card is replaced
-  /// only by a key for the same seat and email with a higher generation.
-  refusedNotNewer,
 
   /// An active or master card is replaced only by a strictly higher
   /// generation, after a different admin's reset and a new issue.
@@ -478,19 +600,33 @@ class LidarCredentialPolicy {
   static bool _sameState(CodeDisplay a, CodeDisplay b) =>
       a.lidarState == b.lidarState && a.lidarReason == b.lidarReason;
 
-  /// Contract 5 and v2.3, decided before anything is sent or stored.
+  /// A format-2 card that is not active (pending, refused, expired, failed,
+  /// reissued or revoked). Its EMAIL and GENERATION come from a file that the
+  /// server may never have confirmed, so they never outrank a key the server
+  /// has just proved (contract 5 and v2.3, amended by the v2.4 note).
+  static bool recoverable(CodeDisplay d) =>
+      d.lidarFormat == 2 && LidarKeyContract.recoverable.contains(d.lidarState);
+
+  /// The generation a replacement must exceed: the card's own for an active or
+  /// format-1 card (server-confirmed), none for a recoverable card.
+  static int replacementFloor(CodeDisplay d) =>
+      recoverable(d) ? 0 : d.lidarGeneration;
+
+  /// Contract 5 and v2.3 (with the v2.4 note), decided before anything is sent
+  /// or stored.
   static LidarImportPlan planImport(LidarMasterKey key, Code? previous) {
     if (key.format != 2) throw ArgumentError('format-2 keys only');
     if (previous == null) return LidarImportPlan.create;
+    final old = previous.display;
+    if (recoverable(old)) {
+      // The same file again; any other key for the seat may take the card,
+      // but only once the server has proved that key (its own activation).
+      return key._isCard(previous)
+          ? LidarImportPlan.alreadyLinked
+          : LidarImportPlan.activateFirst;
+    }
     // As for format 1: the same secret on the seat is the same key.
     if (previous.secret == key._secret) return LidarImportPlan.alreadyLinked;
-    final old = previous.display;
-    if (old.lidarFormat == 2 &&
-        LidarKeyContract.recoverable.contains(old.lidarState)) {
-      return old.lidarEmail == key.email && key.generation > old.lidarGeneration
-          ? LidarImportPlan.activateFirst
-          : LidarImportPlan.refusedNotNewer;
-    }
     // An ACTIVE format-2 card or a format-1 master card: the existing
     // linked-credential rule (same seat, enrolled, strictly higher
     // generation, proven by a fresh HTTPS answer).
@@ -631,7 +767,9 @@ class LidarResetApproval {
       _seat == next.display.lidarSeat &&
       _secret == next.secret &&
       next.secret != old.secret &&
-      generation > old.display.lidarGeneration &&
+      // A format-1 or active card: its own generation. A recoverable format-2
+      // card: none (its file's generation was never confirmed; v2.4 note).
+      generation > LidarCredentialPolicy.replacementFloor(old.display) &&
       generation == next.display.lidarGeneration &&
       // A sign-in proof replaces with a format-1 file (today's rule); a
       // format-2 key is authorized by its own activation answer instead.
@@ -694,7 +832,7 @@ class LidarResetApproval {
           !validReply(
             data,
             previous.display.lidarSeat,
-            previous.display.lidarGeneration,
+            LidarCredentialPolicy.replacementFloor(previous.display),
             now,
           )) {
         throw StateError('Replacement not authorized.');

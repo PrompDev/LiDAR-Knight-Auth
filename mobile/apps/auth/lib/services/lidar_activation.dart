@@ -14,37 +14,49 @@ typedef LidarPoster =
 /// A fresh server answer about one format-2 key. Only [LidarActivation] mints
 /// it, from a validated HTTPS answer of the pinned host; a file, a local flag
 /// or pasted JSON cannot. For 60 seconds it authorizes recording that answer
-/// on the card, or replacing the seat's card with the key it activated.
+/// on the card it was minted for, or replacing the seat's card with that key.
+/// An 'active' proof exists only when the server proved this card's secret:
+/// a 200 from /activate, or a lost answer settled as [LidarActivation] says.
 class LidarActivationProof {
   final String _seat;
   final String _activationId;
   final int _generation;
   final String _secret;
+  final String _account;
+  final String _issuer;
+  final String _email;
+  final String _activateBy;
   final String state;
   final String reason;
   final int _at;
-  LidarActivationProof._(
-    this._seat,
-    this._activationId,
-    this._generation,
-    this._secret,
-    this.state,
-    this.reason,
-    this._at,
-  );
+  LidarActivationProof._(Code card, this.state, this.reason, this._at)
+    : _seat = card.display.lidarSeat,
+      _activationId = card.display.lidarActivationId,
+      _generation = card.display.lidarGeneration,
+      _secret = card.secret,
+      _account = card.account,
+      _issuer = card.display.lidarIssuer,
+      _email = card.display.lidarEmail,
+      _activateBy = card.display.lidarActivateBy;
 
   bool get _fresh {
     final age = DateTime.now().millisecondsSinceEpoch - _at;
     return age >= 0 && age < 60000;
   }
 
+  // The exact card the server answered about.
   bool _isKey(Code code) {
     final d = code.display;
     return d.lidarFormat == 2 &&
         d.lidarSeat == _seat &&
         d.lidarActivationId == _activationId &&
         d.lidarGeneration == _generation &&
-        code.secret == _secret;
+        d.lidarIssuer == _issuer &&
+        d.lidarEmail == _email &&
+        d.lidarActivateBy == _activateBy &&
+        code.secret == _secret &&
+        code.account == _account &&
+        code.issuer == 'LiDAR-Knight';
   }
 
   // The same card records the server's answer. An ACTIVE card never moves
@@ -58,8 +70,9 @@ class LidarActivationProof {
       next.display.lidarState == state &&
       next.display.lidarReason == reason;
 
-  // Contract 5 and v2.3: a newer key takes the seat's card only after its
-  // own activation answered active at its own generation.
+  // Contract 5 and v2.3 with the v2.4 note: a key takes the seat's card only
+  // after the server proved it is the seat's enrolled credential at its own
+  // generation.
   bool _allowsReplacement(Code existing, Code next) {
     final old = existing.display;
     final neu = next.display;
@@ -68,19 +81,17 @@ class LidarActivationProof {
         !_isKey(next) ||
         neu.lidarState != 'active' ||
         neu.lidarReason.isNotEmpty ||
-        old.lidarSeat != _seat ||
-        next.secret == existing.secret) {
+        old.lidarSeat != _seat) {
       return false;
     }
-    if (old.lidarFormat == 2 &&
-        LidarKeyContract.recoverable.contains(old.lidarState)) {
-      // Pending-card recovery: the same EMAIL and a HIGHER generation.
-      return neu.lidarEmail == old.lidarEmail &&
-          _generation > old.lidarGeneration;
-    }
+    // A card that is not active is replaced by any key the server has just
+    // proved: a genuine older key of the seat always has a lower generation
+    // (the seat's generation only grows), and the EMAIL and GENERATION of a
+    // file the server never confirmed must not block the real key.
+    if (LidarCredentialPolicy.recoverable(old)) return true;
     // An ACTIVE card or a format-1 master card: the linked-credential rule
     // (same seat, kind enrolled, strictly higher generation, fresh HTTPS).
-    return _generation > old.lidarGeneration;
+    return next.secret != existing.secret && _generation > old.lidarGeneration;
   }
 
   @override
@@ -117,6 +128,11 @@ class LidarActivation {
   static const host = LidarKeyContract.issuer;
   static final Uri activateUrl = Uri.https(host, '/api/owner/activate');
   static final Uri statusUrl = Uri.https(host, '/api/owner/activation/status');
+
+  /// The code-only sign-in, used only to prove a card's secret after an
+  /// 'already-active' answer; its session is signed out at once.
+  static final Uri signinUrl = Uri.https(host, '/api/owner/signin');
+  static final Uri _signoutUrl = Uri.https(host, '/api/owner/signout');
   static const timeout = Duration(seconds: 12);
 
   // The HTTP status of each refusal reason (server KEY_HTTP; bad-code is also
@@ -143,7 +159,7 @@ class LidarActivation {
     : _post = kReleaseMode || poster == null ? httpsPost : poster,
       _codeFor = kReleaseMode || codeFor == null ? getOTP : codeFor;
 
-  /// The only URLs this app sends a key's fields to.
+  /// The only URLs this app sends a key's fields or codes to.
   static bool pinned(Uri url) =>
       url.scheme == 'https' &&
       url.host == host &&
@@ -151,7 +167,9 @@ class LidarActivation {
       url.userInfo.isEmpty &&
       !url.hasQuery &&
       !url.hasFragment &&
-      (url.path == activateUrl.path || url.path == statusUrl.path);
+      (url.path == activateUrl.path ||
+          url.path == statusUrl.path ||
+          url.path == signinUrl.path);
 
   static Future<LidarHttpReply> httpsPost(
     Uri url,
@@ -160,7 +178,11 @@ class LidarActivation {
     if (!pinned(url)) {
       throw StateError('Activation is pinned to https://$host.');
     }
+    // A sign-in is a cookie call: it needs the admin origin and the CSRF
+    // header, and its session is never kept (signed out below).
+    final signin = url.path == signinUrl.path;
     final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+    final cookies = <Cookie>[];
     try {
       final request = await client
           .postUrl(url)
@@ -169,10 +191,15 @@ class LidarActivation {
       request.persistentConnection = false;
       request.headers.contentType = ContentType.json;
       request.headers.set(HttpHeaders.acceptHeader, 'application/json');
+      if (signin) {
+        request.headers.set('Origin', 'https://$host');
+        request.headers.set('X-LK-Request', '1');
+      }
       request.write(jsonEncode(body));
       final response = await request.close().timeout(
         const Duration(seconds: 8),
       );
+      if (signin) cookies.addAll(response.cookies);
       final bytes = await response
           .fold<List<int>>(<int>[], (buffer, chunk) {
             if (buffer.length + chunk.length > 4096) {
@@ -190,6 +217,28 @@ class LidarActivation {
       }
       return LidarHttpReply(response.statusCode, json);
     } finally {
+      // Sign out only the session this proof created; nothing else is touched.
+      if (cookies.isNotEmpty) {
+        try {
+          final request = await client
+              .postUrl(_signoutUrl)
+              .timeout(const Duration(seconds: 5));
+          request.followRedirects = false;
+          request.persistentConnection = false;
+          request.headers.contentType = ContentType.json;
+          request.headers.set('Origin', 'https://$host');
+          request.headers.set('X-LK-Request', '1');
+          request.cookies.addAll(cookies);
+          request.write('{}');
+          final response = await request.close().timeout(
+            const Duration(seconds: 5),
+          );
+          await response.drain<void>().timeout(const Duration(seconds: 5));
+        } catch (_) {
+          /* Session expiry is server-enforced; no secret diagnostics. */
+        }
+      }
+      cookies.clear();
       client.close(force: true);
     }
   }
@@ -233,9 +282,11 @@ class LidarActivation {
     }
     final json = reply.json;
     if (reply.status == 200) {
+      // Only the server's commitKey answers 200, so an answer that does not
+      // match this card exactly is outside the contract: nothing is recorded.
       return _validActive(json, d)
           ? _answer(card, 'active', '')
-          : _answer(card, 'refused', 'tampered');
+          : const LidarActivationOutcome._(problem: 'unexpected');
     }
     if (json is! Map ||
         json['state'] != 'refused' ||
@@ -279,7 +330,13 @@ class LidarActivation {
   }
 
   // Lost answer (v2.3): after replayed or already-active, the card is active
-  // only when the status call says active at the file's own generation.
+  // only when the status call says active at the file's own seat and
+  // generation. The status call says nothing about this card's secret, so
+  // (v2.4 note) the secret must be proved too: 'replayed' means the server
+  // matched this very code against the seat's enrolled credential; after
+  // 'already-active' (the code did not match a used step) a fresh code-only
+  // sign-in with this card's code must answer this seat, kind enrolled, at
+  // this generation. Without that proof the refusal stands.
   Future<LidarActivationOutcome> _recover(Code card, String reason) async {
     final d = card.display;
     try {
@@ -294,7 +351,9 @@ class LidarActivation {
           json['generation'] == d.lidarGeneration) {
         switch (json['state']) {
           case 'active':
-            return _answer(card, 'active', '');
+            if (reason == 'replayed' || await _signsIn(card)) {
+              return _answer(card, 'active', '');
+            }
           case 'expired' || 'reissued' || 'revoked':
             return _answer(card, json['state'] as String, '');
           case 'failed':
@@ -307,30 +366,48 @@ class LidarActivation {
     return _answer(card, 'refused', reason);
   }
 
+  // POST /api/owner/signin { code } with this card's current code: true only
+  // for a 200 naming this card's seat with linkedCredential { protocol 1,
+  // kind 'enrolled', generation = this card's }. httpsPost signs the session
+  // out at once; no cookie or token leaves it.
+  Future<bool> _signsIn(Code card) async {
+    final d = card.display;
+    try {
+      final reply = await _post(signinUrl, {
+        'code': _codeFor(card),
+      }).timeout(timeout);
+      final json = reply.json;
+      if (reply.status != 200 || json is! Map) return false;
+      final linked = json['linkedCredential'];
+      return json['seat'] == d.lidarSeat &&
+          linked is Map &&
+          linked['protocol'] == 1 &&
+          linked['kind'] == 'enrolled' &&
+          linked['generation'] is int &&
+          linked['generation'] == d.lidarGeneration;
+    } catch (_) {
+      return false;
+    }
+  }
+
   LidarActivationOutcome _answer(
     Code card,
     String state,
     String reason, {
     int? attemptsLeft,
     int? retryAfter,
-  }) {
-    final d = card.display;
-    return LidarActivationOutcome._(
-      state: state,
-      reason: reason,
-      attemptsLeft: attemptsLeft,
-      retryAfter: retryAfter,
-      proof: LidarActivationProof._(
-        d.lidarSeat,
-        d.lidarActivationId,
-        d.lidarGeneration,
-        card.secret,
-        state,
-        reason,
-        DateTime.now().millisecondsSinceEpoch,
-      ),
-    );
-  }
+  }) => LidarActivationOutcome._(
+    state: state,
+    reason: reason,
+    attemptsLeft: attemptsLeft,
+    retryAfter: retryAfter,
+    proof: LidarActivationProof._(
+      card,
+      state,
+      reason,
+      DateTime.now().millisecondsSinceEpoch,
+    ),
+  );
 
   /// [card] with [outcome] recorded. The stored otpauth data is kept as it is
   /// (Code.copyWith would rebuild it from an unencoded label).
