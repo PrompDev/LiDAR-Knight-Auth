@@ -21,6 +21,7 @@ import 'package:ente_auth/store/code_display_store.dart';
 import 'package:ente_auth/store/code_store.dart';
 import 'package:ente_auth/ui/home_page.dart';
 import 'package:ente_auth/ui/lidar_knight/dot_widgets.dart';
+import 'package:ente_auth/ui/lidar_knight/startup_screen.dart';
 import 'package:ente_auth/ui/utils/icon_utils.dart';
 import 'package:ente_auth/utils/debug_build_flags.dart';
 import 'package:ente_auth/utils/directory_utils.dart' as auth_dir_utils;
@@ -49,6 +50,14 @@ final _logger = Logger("main");
 
 /// The name shown on window titles and the tray (LiDAR-Knight Auth fork).
 const String kAppDisplayName = "LiDAR-Knight Auth";
+
+final _startupState = ValueNotifier<LkStartupState>(
+  const LkStartupState(LkStartupStage.desktop),
+);
+
+void _startupStage(LkStartupStage stage) {
+  _startupState.value = LkStartupState(stage);
+}
 
 void _registerFontLicenses() {
   // Doto (SIL OFL 1.1) is bundled with the app; list it on the licences page.
@@ -90,6 +99,25 @@ String _linuxTrayIconPath() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  runApp(LkStartupScreen(state: _startupState));
+  try {
+    await _startApp();
+  } catch (error) {
+    final stage = _startupState.value.stage;
+    _startupState.value = LkStartupState(stage, failed: true);
+    // No exception messages, settings, credentials or account data are shown.
+    _logger.severe('Startup failed at ${stage.name} (${error.runtimeType})');
+    if (PlatformDetector.isDesktop()) {
+      try {
+        await windowManager.show();
+      } catch (_) {
+        // A failed native window cannot bypass initialization or expose codes.
+      }
+    }
+  }
+}
+
+Future<void> _startApp() async {
   registerCryptoApi(const EnteCryptoDartAdapter());
   _registerFontLicenses();
 
@@ -151,6 +179,7 @@ void main() async {
 }
 
 Future<void> _runInForeground() async {
+  _startupStage(LkStartupStage.appearance);
   AppThemeConfig.initialize(EnteApp.auth);
   components.ComponentTheme.configure(app: components.ComponentApp.auth);
   final savedThemeMode = await AuthThemePreferences.getThemeMode();
@@ -165,6 +194,7 @@ Future<void> _runInForeground() async {
     }
     final Locale? locale = await getLocale(noFallback: true);
     unawaited(UpdateService.instance.showUpdateNotification());
+    _startupStage(LkStartupStage.interface);
     runApp(
       LkBackdrop(
         child: AppLock(
@@ -218,6 +248,7 @@ void _registerWindowsProtocol() {
 }
 
 Future<void> _init(bool bool, {String? via}) async {
+  _startupStage(LkStartupStage.storage);
   _registerWindowsProtocol();
   await CryptoUtil.init();
 
@@ -226,7 +257,9 @@ Future<void> _init(bool bool, {String? via}) async {
   await CodeDisplayStore.instance.init();
   await Configuration.instance.init([AuthenticatorDB.instance]);
   await cleanupPickedImagesOnStartup(logger: _logger);
+  _startupStage(LkStartupStage.network);
   await Network.instance.init(Configuration.instance);
+  _startupStage(LkStartupStage.services);
   await UserService.instance.init(Configuration.instance, const HomePage());
   await AuthenticatorService.instance.init();
   await BillingService.instance.init();

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:ente_configuration/base_configuration.dart';
 import 'package:ente_events/event_bus.dart';
 import 'package:ente_events/models/endpoint_updated_event.dart';
+import 'package:ente_network/client_package_name.dart';
 import 'package:flutter/foundation.dart';
 import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -24,14 +25,10 @@ class Network {
     }
     final packageInfo = await PackageInfo.fromPlatform();
     final version = packageInfo.version;
-    String packageName = packageInfo.packageName;
-
-    // Linux reports ente_auth; Windows reports Ente Auth.
-    if (Platform.isWindows || Platform.isLinux) {
-      if (packageName == 'ente_auth' || packageName == 'Ente Auth') {
-        packageName = 'io.ente.auth';
-      }
-    }
+    final packageName = normalizeAuthClientPackageName(
+      packageInfo.packageName,
+      isDesktop: Platform.isWindows || Platform.isLinux || Platform.isMacOS,
+    );
 
     if (configuration.isEnteProduction()) {
       if (!packageName.startsWith('io.ente.')) {

@@ -524,9 +524,15 @@ class _FeatureItemWidget extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // LiDAR-Knight Auth: a dot diamond emblem instead of the upstream
-        // illustrations.
-        const Center(child: LkDiamondEmblem(size: 188)),
+        // The owner's AUTH emblem remains transparent over the red dot haze.
+        Center(
+          child: Image.asset(
+            'assets/icons/lidar-knight-auth.png',
+            width: 188,
+            height: 188,
+            fit: BoxFit.contain,
+          ),
+        ),
         const SizedBox(height: 12),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),

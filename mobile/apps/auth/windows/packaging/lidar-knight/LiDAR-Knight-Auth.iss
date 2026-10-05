@@ -12,7 +12,7 @@
 
 #define MyAppName "LiDAR-Knight Auth"
 #ifndef MyAppVersion
-  #define MyAppVersion "4.4.27"
+  #define MyAppVersion "4.4.28"
 #endif
 #define MyAppPublisher "PrompDev"
 #define MyAppURL "https://github.com/PrompDev/LiDAR-Knight-Auth"

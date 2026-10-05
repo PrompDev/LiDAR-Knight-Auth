@@ -30,6 +30,14 @@ LiDAR-Knight Auth is a modified version of [Ente Auth](https://github.com/ente/e
 
 ## Dated log
 
+### 2026-10-05 — Windows 4.4.28 startup and AUTH artwork repair
+
+- Fixed desktop client-name normalization for the exact LiDAR-Knight Auth names. Unknown names still fail the existing production guard; mobile identities are unchanged.
+- Added a transparent red-dot loading screen before asynchronous initialization and a stage-only failure screen. The authenticator still requires completed initialization and its existing lock check.
+- Replaced the Windows application, installer and tray icons with the red LiDAR Knight AUTH emblem, also used on the welcome screen.
+- Built locally with Flutter 3.47.2 and Inno Setup 6. Six focused regression tests passed. The installed Windows 4.4.28+1008 launch, transparent welcome screen and local-only first-account screen were verified. Enrollment, codes and admin sign-in were not tested.
+- Preserved the installer AppId, executable name, data directory and authenticator storage identities. No stored accounts or keys were reset.
+
 | Date | Change |
 |---|---|
 | 2026-10-04 | Local Windows release build of commit `7f314a0` (app version 4.4.27): `flutter build windows --release` with Flutter 3.47.2 and Visual Studio 2022, on the maintainer's machine. No CI. |
