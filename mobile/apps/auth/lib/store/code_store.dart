@@ -143,6 +143,7 @@ class CodeStore {
     List<Code>? existingAllCodes,
     LidarResetApproval? lidarResetApproval,
     LidarMasterKey? lidarMasterKey,
+    LidarActivationProof? lidarActivation,
   }) => _serializeWrite(
     () => _addCode(
       code,
@@ -150,6 +151,7 @@ class CodeStore {
       accountMode: accountMode,
       lidarResetApproval: lidarResetApproval,
       lidarMasterKey: lidarMasterKey,
+      lidarActivation: lidarActivation,
     ),
   );
 
@@ -159,6 +161,7 @@ class CodeStore {
     AccountMode? accountMode,
     LidarResetApproval? lidarResetApproval,
     LidarMasterKey? lidarMasterKey,
+    LidarActivationProof? lidarActivation,
   }) async {
     final mode = code.display.lidarLocked
         ? AccountMode.offline
@@ -177,6 +180,7 @@ class CodeStore {
       allCodes,
       approval: lidarResetApproval,
       importKey: lidarMasterKey,
+      activation: lidarActivation,
     );
     // Managed admin credentials never enter ordinary cloud synchronization.
     if (code.display.lidarLocked) shouldSync = false;

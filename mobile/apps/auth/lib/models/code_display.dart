@@ -16,6 +16,16 @@ class CodeDisplay {
   final String lidarSeat;
   final bool lidarLocked;
   final int lidarGeneration;
+  // LiDAR emailed admin key (format 2, EMAIL-KEY-CONTRACT-v2 v2.3). A row
+  // without these keys in its stored JSON is a format-1 master card, exactly
+  // as Auth 4.4.29 stored it; they are written to JSON only for format 2.
+  final int lidarFormat;
+  final String lidarIssuer;
+  final String lidarEmail;
+  final String lidarActivationId;
+  final String lidarState;
+  final String lidarReason;
+  final String lidarActivateBy;
 
   CodeDisplay({
     this.pinned = false,
@@ -30,6 +40,13 @@ class CodeDisplay {
     this.lidarSeat = '',
     this.lidarLocked = false,
     this.lidarGeneration = 0,
+    this.lidarFormat = 1,
+    this.lidarIssuer = '',
+    this.lidarEmail = '',
+    this.lidarActivationId = '',
+    this.lidarState = '',
+    this.lidarReason = '',
+    this.lidarActivateBy = '',
   });
 
   bool get isCustomIcon => (iconSrc != '' && iconID != '');
@@ -47,6 +64,13 @@ class CodeDisplay {
     String? lidarSeat,
     bool? lidarLocked,
     int? lidarGeneration,
+    int? lidarFormat,
+    String? lidarIssuer,
+    String? lidarEmail,
+    String? lidarActivationId,
+    String? lidarState,
+    String? lidarReason,
+    String? lidarActivateBy,
   }) {
     final bool updatedPinned = pinned ?? this.pinned;
     final bool updatedTrashed = trashed ?? this.trashed;
@@ -71,6 +95,13 @@ class CodeDisplay {
       lidarSeat: lidarSeat ?? this.lidarSeat,
       lidarLocked: lidarLocked ?? this.lidarLocked,
       lidarGeneration: lidarGeneration ?? this.lidarGeneration,
+      lidarFormat: lidarFormat ?? this.lidarFormat,
+      lidarIssuer: lidarIssuer ?? this.lidarIssuer,
+      lidarEmail: lidarEmail ?? this.lidarEmail,
+      lidarActivationId: lidarActivationId ?? this.lidarActivationId,
+      lidarState: lidarState ?? this.lidarState,
+      lidarReason: lidarReason ?? this.lidarReason,
+      lidarActivateBy: lidarActivateBy ?? this.lidarActivateBy,
     );
   }
 
@@ -78,6 +109,10 @@ class CodeDisplay {
     if (json == null) {
       return CodeDisplay();
     }
+    // Format-2 metadata is read only from a row that says it is format 2.
+    final bool format2 = json['lidarFormat'] == 2;
+    String v2(String key) =>
+        format2 && json[key] is String ? json[key] as String : '';
     return CodeDisplay(
       pinned: json['pinned'] ?? false,
       trashed: json['trashed'] ?? false,
@@ -93,6 +128,13 @@ class CodeDisplay {
       lidarGeneration: json['lidarGeneration'] is int
           ? json['lidarGeneration']
           : 0,
+      lidarFormat: format2 ? 2 : 1,
+      lidarIssuer: v2('lidarIssuer'),
+      lidarEmail: v2('lidarEmail'),
+      lidarActivationId: v2('lidarActivationId'),
+      lidarState: v2('lidarState'),
+      lidarReason: v2('lidarReason'),
+      lidarActivateBy: v2('lidarActivateBy'),
     );
   }
 
@@ -140,6 +182,15 @@ class CodeDisplay {
       'lidarSeat': lidarSeat,
       'lidarLocked': lidarLocked,
       'lidarGeneration': lidarGeneration,
+      if (lidarFormat == 2) ...{
+        'lidarFormat': 2,
+        'lidarIssuer': lidarIssuer,
+        'lidarEmail': lidarEmail,
+        'lidarActivationId': lidarActivationId,
+        'lidarState': lidarState,
+        'lidarReason': lidarReason,
+        'lidarActivateBy': lidarActivateBy,
+      },
     };
   }
 
@@ -156,6 +207,13 @@ class CodeDisplay {
         other.lidarSeat == lidarSeat &&
         other.lidarLocked == lidarLocked &&
         other.lidarGeneration == lidarGeneration &&
+        other.lidarFormat == lidarFormat &&
+        other.lidarIssuer == lidarIssuer &&
+        other.lidarEmail == lidarEmail &&
+        other.lidarActivationId == lidarActivationId &&
+        other.lidarState == lidarState &&
+        other.lidarReason == lidarReason &&
+        other.lidarActivateBy == lidarActivateBy &&
         listEquals(other.tags, tags);
   }
 
@@ -169,6 +227,13 @@ class CodeDisplay {
         lidarSeat.hashCode ^
         lidarLocked.hashCode ^
         lidarGeneration.hashCode ^
+        lidarFormat.hashCode ^
+        lidarIssuer.hashCode ^
+        lidarEmail.hashCode ^
+        lidarActivationId.hashCode ^
+        lidarState.hashCode ^
+        lidarReason.hashCode ^
+        lidarActivateBy.hashCode ^
         tags.hashCode;
   }
 }
