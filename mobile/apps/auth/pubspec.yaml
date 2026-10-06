@@ -1,6 +1,6 @@
 name: ente_auth
 description: LiDAR-Knight Auth, a red-dot two-factor authenticator (a fork of Ente Auth)
-version: 4.4.31+1011
+version: 4.4.32+1012
 publish_to: none
 
 resolution: workspace
