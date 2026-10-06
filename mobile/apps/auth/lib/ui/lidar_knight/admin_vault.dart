@@ -104,6 +104,8 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
   String? _notice;
   // 'import', 'activate' or 'remove' while one runs.
   String? _working;
+  // Which card ACTIVATE runs for (_cardKey).
+  String? _activating;
   _LidarSetup? _setup;
   StreamSubscription<CodesUpdatedEvent>? _updates;
 
@@ -113,10 +115,27 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
       (kReleaseMode ? null : widget.activation) ?? _pinned;
   bool get _busy => _working != null;
 
-  /// The one card the tab shows: a working key before a broken one.
-  static Code? _slotOf(List<Code> cards) =>
-      cards.where((c) => !lidarBroken(c.display)).firstOrNull ??
-      cards.firstOrNull;
+  /// The stored cards in a stable order: working keys (active or format 1)
+  /// first, then waiting ones (pending or refused), then broken ones; by seat.
+  /// One card is the one slot; several come from an older version that kept
+  /// one card per seat, and each stays reachable until it is REMOVEd.
+  static List<Code> _ordered(List<Code> cards) {
+    int rank(Code c) => lidarBroken(c.display)
+        ? 2
+        : c.display.lidarFormat != 2 || c.display.lidarState == 'active'
+        ? 0
+        : 1;
+    return [...cards]..sort(
+      (a, b) => rank(a) != rank(b)
+          ? rank(a).compareTo(rank(b))
+          : a.display.lidarSeat != b.display.lidarSeat
+          ? a.display.lidarSeat.compareTo(b.display.lidarSeat)
+          : (a.generatedID ?? 0).compareTo(b.generatedID ?? 0),
+    );
+  }
+
+  static String _cardKey(Code card, bool setup) =>
+      setup ? 'setup' : 'card-${card.generatedID}';
 
   @override
   void initState() {
@@ -128,7 +147,17 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
   Future<void> _load() async {
     try {
       final cards = await _store.cards();
-      if (mounted) setState(() => _cards = cards);
+      if (mounted) {
+        setState(() {
+          _cards = cards;
+          // A waiting key whose card is gone has nothing left to replace.
+          final previous = _setup?.previous.generatedID;
+          if (previous != null &&
+              !cards.any((c) => c.generatedID == previous)) {
+            _setup = null;
+          }
+        });
+      }
     } catch (_) {
       _say('Unable to open the local admin vault.');
     }
@@ -174,15 +203,16 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
       final sameSeat = stored
           .where((c) => c.display.lidarSeat == key.seat)
           .firstOrNull;
-      final previous = sameSeat ?? _slotOf(stored);
+      final previous = sameSeat ?? stored.firstOrNull;
       final candidate = key.toCode();
       final plan = LidarCredentialPolicy.planSlotImport(
         key,
         sameSeat: sameSeat,
         slot: previous,
+        crowded: stored.length > 1,
       );
-      // One slot: a new key waits in it until it is proved; any other
-      // answer leaves the stored card in it.
+      // One slot: a new key waits in the card it would replace until it is
+      // proved; any other answer leaves the stored card there.
       if (mounted) {
         setState(
           () => _setup = plan == LidarImportPlan.activateFirst
@@ -209,6 +239,8 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
           _say(_lockedNotice);
         case LidarImportPlan.removeFirst:
           _say('One key at a time: REMOVE this key first, then import.');
+        case LidarImportPlan.removeExtraFirst:
+          _say('One key at a time: REMOVE the extra keys first, then import.');
       }
     } on FormatException catch (error) {
       _say(error.message);
@@ -224,6 +256,7 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
 
   Future<void> _activateCard(Code card) async {
     if (!_start('activate')) return;
+    _activating = _cardKey(card, false);
     LidarActivationOutcome? outcome;
     try {
       outcome = await _activation.activate(card);
@@ -251,6 +284,7 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
   Future<void> _activateSetup() async {
     final setup = _setup;
     if (setup == null || !_start('activate')) return;
+    _activating = _cardKey(setup.card, true);
     try {
       if (setup.key.format == 2) {
         await _activateEmailedSetup(setup);
@@ -363,7 +397,20 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
   @override
   Widget build(BuildContext context) {
     final setup = _setup;
-    final card = setup?.card ?? _slotOf(_cards);
+    final stored = _ordered(_cards);
+    final several = stored.length > 1;
+    // (card, waiting). One stored card or none: the one slot, where a waiting
+    // key takes the card's place. Several (from an older version): every
+    // stored card, a waiting key inside the card it would replace.
+    final shown = <(Code, bool)>[
+      if (several)
+        for (final c in stored)
+          setup != null && c.generatedID == setup.previous.generatedID
+              ? (setup.card, true)
+              : (c, false)
+      else if (setup?.card ?? stored.firstOrNull case final card?)
+        (card, setup != null),
+    ];
     final import = Text(
       _working == 'import' ? 'IMPORTING…' : 'IMPORT MASTER KEY .ENV',
     );
@@ -371,7 +418,7 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
       children: [
-        if (card == null) ...[
+        if (shown.isEmpty) ...[
           const Text(
             'ADMIN ACCESS',
             style: TextStyle(
@@ -408,23 +455,32 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
             label: import,
           ),
         ] else ...[
-          LidarFloatingCodeCard(
-            key: ValueKey(setup == null ? 'lidar-card' : 'lidar-setup'),
-            code: card,
-            setup: setup != null,
-            onRemove: setup == null ? () => _remove(card) : null,
-          ),
-          LidarKeyStatus(
-            code: card,
-            setup: setup != null,
-            replaces: setup?.previous.display.lidarSeat,
-            busy: _working == 'activate',
-            disabled: _busy,
-            onActivate: setup != null
-                ? _activateSetup
-                : () => _activateCard(card),
-            onCancel: setup != null ? _cancelSetup : null,
-          ),
+          for (final (i, (card, waiting)) in shown.indexed) ...[
+            if (i > 0) const SizedBox(height: 14),
+            LidarFloatingCodeCard(
+              key: ValueKey(
+                waiting
+                    ? 'lidar-setup'
+                    : several
+                    ? 'lidar-card-${card.generatedID}'
+                    : 'lidar-card',
+              ),
+              code: card,
+              setup: waiting,
+              onRemove: waiting ? null : () => _remove(card),
+            ),
+            LidarKeyStatus(
+              code: card,
+              setup: waiting,
+              replaces: waiting ? setup?.previous.display.lidarSeat : null,
+              busy:
+                  _working == 'activate' &&
+                  _activating == _cardKey(card, waiting),
+              disabled: _busy,
+              onActivate: waiting ? _activateSetup : () => _activateCard(card),
+              onCancel: waiting ? _cancelSetup : null,
+            ),
+          ],
           // A key in the slot: IMPORT drops to a link.
           Align(
             alignment: Alignment.centerLeft,

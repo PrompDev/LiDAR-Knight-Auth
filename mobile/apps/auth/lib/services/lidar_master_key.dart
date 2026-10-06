@@ -596,6 +596,11 @@ enum LidarImportPlan {
   /// format-1 file has no activation that could prove it, so the owner
   /// REMOVEs that card first.
   removeFirst,
+
+  /// Several cards from before 4.4.31 (one per seat) are stored: each keeps
+  /// its own seat's replacement flow, and no NEW seat is added until the owner
+  /// REMOVEs the extra keys.
+  removeExtraFirst,
 }
 
 class LidarCredentialPolicy {
@@ -684,12 +689,16 @@ class LidarCredentialPolicy {
   /// the same secret is the same key, any other waits for its sign-in proof).
   /// With another seat's card in the slot, a format-2 key is a pending
   /// replacement too (checkSlotMove); a format-1 file cannot prove itself, so
-  /// that card is removed first.
+  /// that card is removed first. [crowded]: more than one card is stored (an
+  /// older version kept one per seat); a key for one of those seats follows
+  /// that seat's flow, and a key for a new seat is refused.
   static LidarImportPlan planSlotImport(
     LidarMasterKey key, {
     Code? sameSeat,
     Code? slot,
+    bool crowded = false,
   }) {
+    if (crowded && sameSeat == null) return LidarImportPlan.removeExtraFirst;
     if (key.format != 2) {
       if (sameSeat != null) {
         return sameSeat.secret == key._secret

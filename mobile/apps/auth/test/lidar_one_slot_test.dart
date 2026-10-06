@@ -931,4 +931,255 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+
+  // Check r2 (ceb583a..0a2aa7a): 4.4.29 and 4.4.30 kept one card per seat. A
+  // vault that already holds several keeps every card reachable; the one-slot
+  // rule applies to new imports only.
+  group('several cards from an older version', () {
+    const s4 = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+    const id4 = 'act_0000000000000000000000';
+    const crowdedNotice =
+        'One key at a time: REMOVE the extra keys first, then import.';
+    final master1 = stored(key1(seat: 'admin1').toCode(), '', id: null);
+    final active2 = stored(key2().toCode(), 'active', id: null);
+    final failed3 = stored(
+      key2(seat: 'admin3', activationId: id3, secret: s3).toCode(),
+      'failed',
+      reason: 'locked',
+      id: null,
+    );
+    final pending4 = stored(
+      key2(seat: 'admin4', activationId: id4, secret: s4).toCode(),
+      'pending',
+      id: null,
+    );
+
+    FakeVaultStore legacy(List<Code> cards) {
+      final store = FakeVaultStore();
+      for (final card in cards) {
+        store.seed(card);
+      }
+      return store;
+    }
+
+    // Every card of a long list is built: a tall window.
+    void tall(WidgetTester tester) {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    List<String> seats() => [
+      for (final e in cardFinder.evaluate())
+        (e.widget as LidarFloatingCodeCard).code.display.lidarSeat,
+    ];
+    Finder inCard(int i, Finder f) =>
+        find.descendant(of: cardFinder.at(i), matching: f);
+    String? badgeAt(WidgetTester tester, int i) {
+      final badge = inCard(i, find.byType(LidarStateBadge));
+      return badge.evaluate().isEmpty
+          ? null
+          : tester.widget<LidarStateBadge>(badge).label;
+    }
+
+    testWidgets('every stored card is shown, working keys first, each with '
+        'its own state, code and REMOVE', (tester) async {
+      tall(tester);
+      final store = legacy([failed3, pending4, active2, master1]);
+      await pumpVault(tester, store);
+      expect(seats(), ['admin1', 'admin2', 'admin4', 'admin3']);
+      expect(
+        [for (var i = 0; i < 4; i++) badgeAt(tester, i)],
+        [null, 'ACTIVE', 'PENDING', 'BROKEN'],
+      );
+      expect(find.text('TEST OWNER'), findsOneWidget);
+      for (var i = 0; i < 4; i++) {
+        expect(inCard(i, removeLink), findsOneWidget, reason: seats()[i]);
+      }
+      // Codes: the format-1 and ACTIVE cards reveal; the BROKEN one never.
+      expect(find.text('CLICK TO REVEAL'), findsNWidgets(3));
+      await tapAndSettle(tester, inCard(1, find.text('CLICK TO REVEAL')));
+      expect(inCard(1, digits), findsOneWidget);
+      expect(inCard(0, digits), findsNothing);
+      expect(inCard(3, find.text('CLICK TO REVEAL')), findsNothing);
+      // Only the PENDING card has ACTIVATE.
+      expect(activateButton, findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('each REMOVE removes its own card; one card left is the one '
+        'slot again', (tester) async {
+      tall(tester);
+      final store = legacy([master1, active2, pending4]);
+      final picks = v2File(
+        seat: 'admin3',
+        generation: 1,
+        activationId: id2,
+        secret: s3,
+      );
+      await pumpVault(tester, store, files: [picks]);
+      expect(seats(), ['admin1', 'admin2', 'admin4']);
+
+      await tapAndSettle(tester, inCard(2, removeLink));
+      expect(inCard(2, find.text(lidarRemoveQuestion)), findsOneWidget);
+      await tapAndSettle(tester, inCard(2, removeConfirm));
+      expect(store.rows.map((c) => c.display.lidarSeat), ['admin1', 'admin2']);
+      expect(seats(), ['admin1', 'admin2']);
+
+      await tapAndSettle(tester, inCard(0, removeLink));
+      await tapAndSettle(tester, inCard(0, removeConfirm));
+      expect(store.rows.map((c) => c.display.lidarSeat), ['admin2']);
+      expect(seats(), ['admin2']);
+      expect(find.byKey(const ValueKey('lidar-card')), findsOneWidget);
+
+      // The one-slot rule again: another seat waits in the same slot.
+      await tapAndSettle(tester, importButton);
+      expect(seats(), ['admin3']);
+      expect(badgeAt(tester, 0), 'PENDING SETUP');
+      expect(find.text(crowdedNotice), findsNothing);
+      expect(store.rows.single.display.lidarSeat, 'admin2');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('re-importing either seat follows that seat\'s own flow; a new '
+        'seat is refused', (tester) async {
+      tall(tester);
+      final store = legacy([active2, master1]);
+      final server = FakeServer();
+      final newer2 = v2File(generation: 5, activationId: id2, secret: s3);
+      await pumpVault(
+        tester,
+        store,
+        server: server,
+        files: [
+          v1File(seat: 'admin1'),
+          v2File(),
+          v2File(seat: 'admin5', activationId: id4, secret: s4),
+          v1File(seat: 'admin5', secret: s4),
+          newer2,
+          newer2,
+          v1File(seat: 'admin1', secret: s4),
+        ],
+      );
+      final before = store.rows.map((c) => c.toOTPAuthUrlFormat()).toList();
+      expect(seats(), ['admin1', 'admin2']);
+
+      // The same files again.
+      for (var i = 0; i < 2; i++) {
+        await tapAndSettle(tester, importButton);
+        expect(find.text('This key is already linked.'), findsOneWidget);
+        expect(seats(), ['admin1', 'admin2']);
+      }
+      // A NEW seat, either format: no third card.
+      for (var i = 0; i < 2; i++) {
+        await tapAndSettle(tester, importButton);
+        expect(find.text(crowdedNotice), findsOneWidget);
+        expect(seats(), ['admin1', 'admin2']);
+        expect(find.byKey(const ValueKey('lidar-setup')), findsNothing);
+      }
+      expect(
+        store.rows.map((c) => c.toOTPAuthUrlFormat()).toList(),
+        before,
+        reason: 'nothing stored changed',
+      );
+
+      // A newer admin2 key waits inside the admin2 card; admin1 stays.
+      await tapAndSettle(tester, importButton);
+      expect(seats(), ['admin1', 'admin2']);
+      expect(
+        cardFinder.at(1).evaluate().single.widget.key,
+        const ValueKey('lidar-setup'),
+      );
+      expect(badgeAt(tester, 1), 'PENDING SETUP');
+      expect(inCard(1, removeLink), findsNothing);
+      expect(inCard(0, removeLink), findsOneWidget);
+      await tapAndSettle(tester, cancelButton);
+      expect(badgeAt(tester, 1), 'ACTIVE');
+
+      await tapAndSettle(tester, importButton);
+      server.replies.add(active('admin2', 5));
+      await tapAndSettle(tester, activateButton);
+      expect(server.calls, 1);
+      final admin2 = store.rows.firstWhere(
+        (c) => c.display.lidarSeat == 'admin2',
+      );
+      expect([admin2.secret, admin2.display.lidarState], [s3, 'active']);
+      expect(admin2.generatedID, 1, reason: 'the same row');
+      expect(
+        store.rows.firstWhere((c) => c.display.lidarSeat == 'admin1').secret,
+        s2,
+      );
+      expect(seats(), ['admin1', 'admin2']);
+      expect([badgeAt(tester, 0), badgeAt(tester, 1)], [null, 'ACTIVE']);
+
+      // A format-1 file for admin1 with another secret: its sign-in flow,
+      // waiting inside the admin1 card (not pressed here: no network).
+      await tapAndSettle(tester, importButton);
+      expect(seats(), ['admin1', 'admin2']);
+      expect(
+        cardFinder.at(0).evaluate().single.widget.key,
+        const ValueKey('lidar-setup'),
+      );
+      expect(badgeAt(tester, 0), 'PENDING SETUP');
+      await tapAndSettle(tester, cancelButton);
+      expect(badgeAt(tester, 0), isNull);
+      expect(store.rows.length, 2);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    test('planSlotImport with several cards: own seat as before, no new '
+        'seat', () {
+      final card2 = stored(key2().toCode(), 'active');
+      final master = stored(key1().toCode(), '');
+      for (final key in [
+        key2(seat: 'admin5', activationId: id4, secret: s4),
+        key1(seat: 'admin5', secret: s4),
+      ]) {
+        expect(
+          LidarCredentialPolicy.planSlotImport(key, slot: card2, crowded: true),
+          LidarImportPlan.removeExtraFirst,
+        );
+      }
+      final newer = key2(generation: 5, activationId: id2, secret: s3);
+      expect(
+        LidarCredentialPolicy.planSlotImport(
+          newer,
+          sameSeat: card2,
+          slot: card2,
+          crowded: true,
+        ),
+        LidarCredentialPolicy.planImport(newer, card2),
+      );
+      expect(
+        LidarCredentialPolicy.planSlotImport(
+          key2(),
+          sameSeat: card2,
+          slot: card2,
+          crowded: true,
+        ),
+        LidarImportPlan.alreadyLinked,
+      );
+      expect(
+        LidarCredentialPolicy.planSlotImport(
+          key1(),
+          sameSeat: master,
+          slot: master,
+          crowded: true,
+        ),
+        LidarImportPlan.alreadyLinked,
+      );
+      expect(
+        LidarCredentialPolicy.planSlotImport(
+          key1(secret: s1),
+          sameSeat: master,
+          slot: master,
+          crowded: true,
+        ),
+        LidarImportPlan.activateFirst,
+      );
+    });
+  });
 }
