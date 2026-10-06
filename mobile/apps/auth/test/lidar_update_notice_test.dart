@@ -57,6 +57,16 @@ void main() {
       expect(LidarUpdateNotice.cleanMessage(emoji).runes.length, lessThanOrEqualTo(280), reason: 'cut on whole characters');
     });
 
+    test('a lone surrogate (an emoji cut in half) becomes U+FFFD, so the tooltip text is well-formed', () {
+      final broken = 'New build ${String.fromCharCode(0xD83D)}';
+      final info = LidarUpdateNotice.parse(jsonEncode({'version': '4.4.99', 'message': broken}), '4.4.31');
+      expect(info, isNotNull);
+      expect(info!.message, 'New build ${String.fromCharCode(0xFFFD)}');
+      expect(info.message.codeUnits.any((u) => u >= 0xD800 && u <= 0xDFFF), isFalse);
+      // A whole emoji is kept.
+      expect(LidarUpdateNotice.cleanMessage('Ship it 🛡'), 'Ship it 🛡');
+    });
+
     test('a click only ever goes to an https page on lidarknight.com', () {
       final ok = LidarUpdateNotice.pageUrl('https://lidarknight.com/auth');
       expect(ok, Uri.parse('https://lidarknight.com/auth'));

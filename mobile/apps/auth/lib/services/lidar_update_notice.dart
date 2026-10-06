@@ -162,8 +162,12 @@ class LidarUpdateNotice {
         )
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
-    final chars = flat.runes.toList();
-    if (chars.length <= maxMessage) return flat;
+    // A lone UTF-16 surrogate (e.g. an emoji cut in half by a tool that trimmed the message) becomes U+FFFD: Text
+    // layout throws on ill-formed UTF-16 (Check, review of 4.4.31).
+    final chars = flat.runes
+        .map((r) => r >= 0xD800 && r <= 0xDFFF ? 0xFFFD : r)
+        .toList();
+    if (chars.length <= maxMessage) return String.fromCharCodes(chars);
     return '${String.fromCharCodes(chars.take(maxMessage - 1)).trimRight()}…';
   }
 
