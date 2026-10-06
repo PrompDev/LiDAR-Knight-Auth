@@ -111,19 +111,27 @@ void main() {
   testWidgets(
     'badges for every state; format-1 and active cards look as before',
     (tester) async {
-      for (final (code, badge) in [
-        (
-          card('refused', reason: 'wrong-recipient'),
-          'REFUSED (wrong-recipient)',
+      await tester.pumpWidget(
+        host(
+          LidarFloatingCodeCard(
+            code: card('refused', reason: 'wrong-recipient'),
+          ),
         ),
+      );
+      expect(find.text('REFUSED (wrong-recipient)'), findsOneWidget);
+      expect(find.text('NOT ACTIVATED · LOCAL VAULT'), findsOneWidget);
+      // 4.4.31: an ended key shows the one BROKEN badge, never its code.
+      for (final (code, state) in [
         (card('expired'), 'EXPIRED'),
         (card('failed', reason: 'locked'), 'FAILED'),
         (card('reissued'), 'REISSUED'),
         (card('revoked'), 'REVOKED'),
       ]) {
         await tester.pumpWidget(host(LidarFloatingCodeCard(code: code)));
-        expect(find.text(badge), findsOneWidget);
-        expect(find.text('NOT ACTIVATED · LOCAL VAULT'), findsOneWidget);
+        expect(find.text('BROKEN'), findsOneWidget);
+        expect(find.text(state), findsNothing);
+        expect(find.text('LOCAL VAULT · CODE HIDDEN'), findsOneWidget);
+        expect(find.text('CLICK TO REVEAL'), findsNothing);
       }
       await tester.pumpWidget(
         host(LidarFloatingCodeCard(code: card('active'))),

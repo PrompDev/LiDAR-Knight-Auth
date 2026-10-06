@@ -557,13 +557,13 @@ class _LkScenePainter extends CustomPainter {
       bounds,
       Paint()
         ..shader =
-            RadialGradient(
-              colors: const [
+            const RadialGradient(
+              colors: [
                 Color(0x1AFF2A12),
                 Color(0x060D141C),
                 Colors.transparent,
               ],
-              stops: const [0, 0.55, 1],
+              stops: [0, 0.55, 1],
             ).createShader(
               Rect.fromCircle(center: glow, radius: size.width * 0.65),
             ),

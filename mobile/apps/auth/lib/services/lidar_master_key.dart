@@ -538,11 +538,15 @@ class LidarMasterKey {
 
   // The only initial-creation capability comes from the bounded ENV parser.
   // JSON display flags and a caller-provided generation are not authority.
-  bool _allowsInitial(Code candidate) =>
+  // A new card is PENDING; only checkSlotMove asks for an ACTIVE one, and
+  // only together with that key's own fresh activation answer.
+  bool _allowsInitial(Code candidate, {String state = 'pending'}) =>
       candidate.generatedID == null &&
       candidate.display.lidarLocked &&
       candidate.display.lidarSeat == seat &&
-      (format == 2 ? _matchesV2(candidate.display) : _matchesV1(candidate)) &&
+      (format == 2
+          ? _matchesV2(candidate.display, state)
+          : _matchesV1(candidate)) &&
       candidate.secret == _secret &&
       candidate.account == name &&
       candidate.issuer == 'LiDAR-Knight' &&
@@ -557,14 +561,14 @@ class LidarMasterKey {
       candidate.display.lidarGeneration == 0 &&
       LidarCredentialPolicy._plainV1(candidate.display);
 
-  bool _matchesV2(CodeDisplay display) =>
+  bool _matchesV2(CodeDisplay display, String state) =>
       display.lidarFormat == 2 &&
       display.lidarGeneration == generation &&
       display.lidarIssuer == issuer &&
       display.lidarEmail == email &&
       display.lidarActivationId == _activationId &&
       display.lidarActivateBy == activateBy &&
-      display.lidarState == 'pending' &&
+      display.lidarState == state &&
       display.lidarReason.isEmpty;
 
   @override
@@ -587,6 +591,11 @@ enum LidarImportPlan {
   /// An active or master card is replaced only by a strictly higher
   /// generation, after a different admin's reset and a new issue.
   refusedLocked,
+
+  /// One key at a time (4.4.31): another seat's card holds the slot and this
+  /// format-1 file has no activation that could prove it, so the owner
+  /// REMOVEs that card first.
+  removeFirst,
 }
 
 class LidarCredentialPolicy {
@@ -669,6 +678,34 @@ class LidarCredentialPolicy {
         : LidarImportPlan.refusedLocked;
   }
 
+  /// One key slot (Auth 4.4.31): the LIDAR ADMIN tab holds one card at a time.
+  /// [sameSeat] is the stored card of the key's own seat, [slot] the card the
+  /// tab shows. A key for the seat's own card follows planImport (format 1:
+  /// the same secret is the same key, any other waits for its sign-in proof).
+  /// With another seat's card in the slot, a format-2 key is a pending
+  /// replacement too (checkSlotMove); a format-1 file cannot prove itself, so
+  /// that card is removed first.
+  static LidarImportPlan planSlotImport(
+    LidarMasterKey key, {
+    Code? sameSeat,
+    Code? slot,
+  }) {
+    if (key.format != 2) {
+      if (sameSeat != null) {
+        return sameSeat.secret == key._secret
+            ? LidarImportPlan.alreadyLinked
+            : LidarImportPlan.activateFirst;
+      }
+      return slot == null
+          ? LidarImportPlan.create
+          : LidarImportPlan.removeFirst;
+    }
+    final plan = planImport(key, sameSeat);
+    return plan == LidarImportPlan.create && slot != null
+        ? LidarImportPlan.activateFirst
+        : plan;
+  }
+
   /// Standard imports cannot move a known admin secret into export/sync flows.
   /// The inventory must come from persistent offline storage, not UI hints.
   static void checkStandard(Code candidate, Iterable<Code> offlineInventory) {
@@ -708,6 +745,65 @@ class LidarCredentialPolicy {
         'The saved account changed. Refresh before removing it.',
       );
     }
+  }
+
+  /// The LIDAR ADMIN tab's REMOVE (4.4.31), and nothing else: the owner
+  /// confirmed removing [card] from this device. Only the very stored row
+  /// ([persistent]: same row, seat and key) of a managed card may go; every
+  /// other delete or edit still goes through checkRemove and checkWrite,
+  /// which refuse managed cards. Server access is not touched.
+  static void checkLidarRemove(Code card, Code? persistent) {
+    if (persistent == null ||
+        persistent.hasError ||
+        card.generatedID == null ||
+        card.generatedID != persistent.generatedID ||
+        !managed(card) ||
+        !managed(persistent) ||
+        card.display.lidarSeat != persistent.display.lidarSeat ||
+        !_sameIdentity(card, persistent)) {
+      throw StateError('The saved key changed. Refresh before removing it.');
+    }
+  }
+
+  /// One key slot (4.4.31): a format-2 key of ANOTHER seat takes the slot from
+  /// [previous] only with its own fresh 'active' answer ([proof]) and only as
+  /// the very card its file ([key]) makes. [previous] must be exactly the
+  /// stored row and the new seat must have no card. The new card is then
+  /// saved and [previous] deleted; nothing else saves one card and deletes
+  /// another. The seat's own card is replaced by checkWrite as before.
+  static void checkSlotMove(
+    Code previous,
+    Code next,
+    Iterable<Code> stored, {
+    required LidarMasterKey key,
+    required LidarActivationProof proof,
+  }) {
+    final rows = stored.toList(growable: false);
+    final saved = rows
+        .where(
+          (c) =>
+              !c.hasError &&
+              c.generatedID != null &&
+              c.generatedID == previous.generatedID,
+        )
+        .firstOrNull;
+    final seatTaken = rows.any(
+      (c) => managed(c) && c.display.lidarSeat == next.display.lidarSeat,
+    );
+    if (saved == null ||
+        !managed(saved) ||
+        !managed(previous) ||
+        saved.display.lidarSeat != previous.display.lidarSeat ||
+        !_sameIdentity(saved, previous) ||
+        next.display.lidarSeat == saved.display.lidarSeat ||
+        seatTaken ||
+        !key._allowsInitial(next, state: 'active') ||
+        !proof._provesActive(next)) {
+      throw StateError(
+        'Another admin must reset this LiDAR account in the game terminal.',
+      );
+    }
+    _checkLockedShape(next);
   }
 
   static void checkWrite(
@@ -767,6 +863,10 @@ class LidarCredentialPolicy {
         );
       }
     }
+    _checkLockedShape(candidate);
+  }
+
+  static void _checkLockedShape(Code candidate) {
     if (managed(candidate) &&
         (!RegExp(r'^admin[1-5]$').hasMatch(candidate.display.lidarSeat) ||
             candidate.type != Type.totp ||

@@ -235,6 +235,48 @@ class CodeStore {
         Bus.instance.fire(CodesUpdatedEvent());
       });
 
+  /// The LIDAR ADMIN tab's REMOVE and nothing else (Auth 4.4.31): deletes one
+  /// managed LiDAR card from the offline vault after the owner confirmed it
+  /// there. removeCode and addCode still refuse managed cards. This only
+  /// removes the key from this device; the server seat is not touched.
+  Future<void> removeLidarCard(Code card) => _serializeWrite(() async {
+    const mode = AccountMode.offline;
+    final persistent = (await getAllCodes(
+      accountMode: mode,
+    )).where((saved) => saved.generatedID == card.generatedID).firstOrNull;
+    LidarCredentialPolicy.checkLidarRemove(card, persistent);
+    await _authenticatorService.deleteEntry(persistent!.generatedID!, mode);
+    Bus.instance.fire(CodesUpdatedEvent());
+  });
+
+  /// One key slot (Auth 4.4.31): a key of another seat that the server has
+  /// just activated ([proof]) takes the slot from [previous]: the new card is
+  /// saved, then [previous] is deleted (checkSlotMove). A key of the seat's
+  /// own card is saved with addCode and its activation proof instead.
+  Future<void> replaceLidarSlot(
+    Code previous,
+    Code next, {
+    required LidarMasterKey key,
+    required LidarActivationProof proof,
+  }) => _serializeWrite(() async {
+    const mode = AccountMode.offline;
+    final stored = await getAllCodes(accountMode: mode);
+    LidarCredentialPolicy.checkSlotMove(
+      previous,
+      next,
+      stored,
+      key: key,
+      proof: proof,
+    );
+    next.generatedID = await _authenticatorService.addEntry(
+      next.toOTPAuthUrlFormat(),
+      false,
+      mode,
+    );
+    await _authenticatorService.deleteEntry(previous.generatedID!, mode);
+    Bus.instance.fire(CodesUpdatedEvent());
+  });
+
   bool _isOfflineImportRunning = false;
 
   Future<void> importOfflineCodes() async {

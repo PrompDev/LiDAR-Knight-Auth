@@ -94,6 +94,16 @@ class LidarActivationProof {
     return next.secret != existing.secret && _generation > old.lidarGeneration;
   }
 
+  // One key slot (4.4.31, checkSlotMove): the server has just answered
+  // 'active' for exactly [next], which records that answer and nothing else.
+  bool _provesActive(Code next) =>
+      _fresh &&
+      state == 'active' &&
+      reason.isEmpty &&
+      _isKey(next) &&
+      next.display.lidarState == 'active' &&
+      next.display.lidarReason.isEmpty;
+
   @override
   String toString() => 'LidarActivationProof([private])';
 }
