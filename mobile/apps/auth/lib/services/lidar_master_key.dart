@@ -147,6 +147,40 @@ class LidarMasterKey {
     return _parseV1(text);
   }
 
+  /// A clearer word for two import failures that the strict parser reports in
+  /// its generic terms (Auth 4.4.31; the parser itself stays byte-for-byte with
+  /// the server's key-file.js): a key file that arrived ENCODED (one long base64
+  /// line, as the 2026-10-06 mail bug delivered it), and a key in a NEWER format
+  /// than this app reads. Null otherwise. Never returns any of the file's content.
+  static String? importHint(List<int> bytes) {
+    String text;
+    try {
+      text = utf8.decode(bytes).replaceFirst(RegExp(r'^\uFEFF'), '');
+    } catch (_) {
+      return null;
+    }
+    final lines = const LineSplitter()
+        .convert(text)
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty && !l.startsWith('#'))
+        .toList();
+    if (lines.length == 1 &&
+        RegExp(r'^[A-Za-z0-9+/]{40,}={0,2}$').hasMatch(lines.single)) {
+      return 'This file is encoded, not a key file. Download the attachment again from your newest LiDAR Knight key email.';
+    }
+    if (_firstKey(text) != 'LK_FORMAT') return null;
+    final newer =
+        lines.first.substring(lines.first.indexOf('=') + 1).trim() != '2' ||
+        lines.any((l) {
+          final i = l.indexOf('=');
+          return i >= 1 &&
+              !LidarKeyContract.fields.contains(l.substring(0, i).trim());
+        });
+    return newer
+        ? 'This key needs a newer LiDAR Knight Auth. Update it from lidarknight.com/auth, then import again.'
+        : null;
+  }
+
   static String? _firstKey(String text) {
     for (final rawLine in const LineSplitter().convert(text)) {
       final line = rawLine.trim();

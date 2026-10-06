@@ -15,6 +15,7 @@ import 'package:ente_auth/onboarding/model/tag_enums.dart';
 import 'package:ente_auth/onboarding/view/common/tag_chip.dart';
 import 'package:ente_auth/onboarding/view/setup_enter_secret_key_page.dart';
 import 'package:ente_auth/services/authenticator_service.dart';
+import 'package:ente_auth/services/lidar_update_notice.dart';
 import 'package:ente_auth/services/local_backup_service.dart';
 import 'package:ente_auth/services/preference_service.dart';
 import 'package:ente_auth/store/code_display_store.dart';
@@ -37,6 +38,7 @@ import 'package:ente_auth/ui/home/speed_dial_label_widget.dart';
 import 'package:ente_auth/ui/home/widgets/auth_logo_widget.dart';
 import 'package:ente_auth/ui/home/widgets/home_search_field.dart';
 import 'package:ente_auth/ui/lidar_knight/admin_vault.dart';
+import 'package:ente_auth/ui/lidar_knight/lidar_update_indicator.dart';
 import 'package:ente_auth/ui/reorder_codes_page.dart';
 import 'package:ente_auth/ui/scanner_page.dart';
 import 'package:ente_auth/ui/settings/data/import/google_auth_import.dart';
@@ -128,6 +130,10 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _codeSortKey = PreferenceService.instance.codeSortKey();
+    // The update notice (Auth 4.4.31): checks lidarknight.com on start and every
+    // six hours; the title bar widens for its icon only while one is shown.
+    LidarUpdateNotice.instance.available.addListener(_onUpdateNotice);
+    LidarUpdateNotice.instance.start();
     _textController.addListener(_applyFilteringAndRefresh);
     _loadCodes();
     LocalBackupService.instance.triggerDailyBackupIfNeeded().ignore();
@@ -1199,8 +1205,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _onUpdateNotice() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    LidarUpdateNotice.instance.available.removeListener(_onUpdateNotice);
     _streamSubscription?.cancel();
     _deepLinkSubscription?.cancel();
     _triggerLogoutEvent?.cancel();
@@ -1597,21 +1608,30 @@ class _HomePageState extends State<HomePage> {
         ? searchField
         : const AuthLogoWidget(height: 18);
 
+    final menu = IconButton(
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedMenu01,
+        color: iconColor,
+        size: 22,
+        strokeWidth: 1.75,
+      ),
+      tooltip: l10n.settings,
+      onPressed: () {
+        scaffoldKey.currentState?.openDrawer();
+      },
+    );
+    final update = LidarUpdateNotice.instance.available.value != null;
     return AppBar(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       surfaceTintColor: Colors.transparent,
-      leading: IconButton(
-        icon: HugeIcon(
-          icon: HugeIcons.strokeRoundedMenu01,
-          color: iconColor,
-          size: 22,
-          strokeWidth: 1.75,
-        ),
-        tooltip: l10n.settings,
-        onPressed: () {
-          scaffoldKey.currentState?.openDrawer();
-        },
-      ),
+      // The update notice sits right of the menu (DeAndre, 2026-10-06).
+      leadingWidth: update ? 96 : null,
+      leading: update
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [menu, LidarUpdateIndicator()],
+            )
+          : menu,
       title: isDesktop
           ? Stack(
               alignment: Alignment.center,

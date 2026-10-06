@@ -96,7 +96,15 @@ class _LidarAdminVaultState extends State<LidarAdminVault> {
       await for (final chunk in file.openRead(0, LidarMasterKey.maxBytes + 1)) {
         bytes.addAll(chunk);
       }
-      final key = LidarMasterKey.parse(bytes);
+      final LidarMasterKey key;
+      try {
+        key = LidarMasterKey.parse(bytes);
+      } on FormatException catch (error) {
+        // A clearer word for an encoded file or a newer format (4.4.31).
+        final hint = LidarMasterKey.importHint(bytes);
+        bytes.fillRange(0, bytes.length, 0);
+        throw FormatException(hint ?? error.message);
+      }
       bytes.fillRange(0, bytes.length, 0);
       await Configuration.instance.ensureOfflineStorageKey();
       if (key.format == 2) {
