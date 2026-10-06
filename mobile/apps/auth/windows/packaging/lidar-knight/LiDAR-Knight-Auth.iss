@@ -7,12 +7,12 @@
 ; shortcuts, and "Launch" on the last page. The only click is Finish. Unsigned: SmartScreen shows "More info → Run anyway".
 ;
 ; Build (after `flutter build windows --release` in mobile/apps/auth):
-;   "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /DMyAppVersion=4.4.30 /DVcRedist="<VS>\VC\Redist\MSVC\<ver>\x64\Microsoft.VC143.CRT" LiDAR-Knight-Auth.iss
+;   "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" /DMyAppVersion=4.4.31 /DVcRedist="<VS>\VC\Redist\MSVC\<ver>\x64\Microsoft.VC143.CRT" LiDAR-Knight-Auth.iss
 ; Output: mobile/apps/auth/build/installer/LiDAR-Knight-Auth-Setup.exe
 
 #define MyAppName "LiDAR-Knight Auth"
 #ifndef MyAppVersion
-  #define MyAppVersion "4.4.30"
+  #define MyAppVersion "4.4.31"
 #endif
 #define MyAppPublisher "PrompDev"
 #define MyAppURL "https://github.com/PrompDev/LiDAR-Knight-Auth"
@@ -50,6 +50,8 @@ Compression=lzma2/ultra64
 SolidCompression=yes
 LZMAUseSeparateProcess=yes
 WizardStyle=modern
+; 4.4.31: the LiDAR Knight emblem replaces the generic box icon top right (Inno picks the size for the screen scaling).
+WizardSmallImageFile=art\lk-emblem-small-55x55.bmp,art\lk-emblem-small-64x68.bmp,art\lk-emblem-small-83x80.bmp,art\lk-emblem-small-92x97.bmp,art\lk-emblem-small-110x106.bmp,art\lk-emblem-small-119x123.bmp,art\lk-emblem-small-138x140.bmp
 CloseApplications=yes
 RestartApplications=no
 
@@ -65,6 +67,10 @@ Source: "{#VcRedist}\vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#VcRedist}\vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
 #endif
 Source: "..\..\..\..\..\..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE-AGPL-3.0.txt"; Flags: ignoreversion
+; 4.4.31: the LiDAR Knight banner on the "Ready to Install" page (DeAndre). Setup-only files, never installed.
+Source: "art\lk-banner-1x.bmp"; Flags: dontcopy
+Source: "art\lk-banner-1.5x.bmp"; Flags: dontcopy
+Source: "art\lk-banner-2x.bmp"; Flags: dontcopy
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -72,3 +78,28 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+// 4.4.31 (DeAndre): the LiDAR Knight banner fills the empty box on the "Ready to Install" page. The art for 100 %, 150 %
+// or 200 % scaling is chosen by the wizard's own scale, shown at its native width (narrowed only if the page is narrower),
+// keeping its 3:1 shape, centred where the (empty) ready memo was.
+procedure InitializeWizard;
+var
+  Banner: TBitmapImage;
+  Name: String;
+  W, H: Integer;
+begin
+  if ScaleX(100) >= 175 then Name := 'lk-banner-2x.bmp'
+  else if ScaleX(100) >= 125 then Name := 'lk-banner-1.5x.bmp'
+  else Name := 'lk-banner-1x.bmp';
+  ExtractTemporaryFile(Name);
+  Banner := TBitmapImage.Create(WizardForm);
+  Banner.Parent := WizardForm.ReadyPage;
+  Banner.Bitmap.LoadFromFile(ExpandConstant('{tmp}\' + Name));
+  W := Banner.Bitmap.Width;
+  if W > WizardForm.ReadyMemo.Width then W := WizardForm.ReadyMemo.Width;
+  H := W * Banner.Bitmap.Height div Banner.Bitmap.Width;
+  Banner.Stretch := True;
+  Banner.SetBounds(WizardForm.ReadyMemo.Left + (WizardForm.ReadyMemo.Width - W) div 2, WizardForm.ReadyMemo.Top, W, H);
+  WizardForm.ReadyMemo.Visible := False;
+end;
